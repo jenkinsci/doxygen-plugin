@@ -1,0 +1,14 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  <f:entry title="Doxyfile path" help="/plugin/doxygen/doxyfile.html">
+	<f:textbox name="doxygen.doxyfilePath" 
+			   value="${instance.doxyfilePath}"
+			   checkUrl="'${rootURL}/plugin/doxygen/checkDoxygenFile?job=${it.fullName}&amp;value='+escape(this.value)" />       
+  </f:entry>
+    	
+  <f:entry help="/plugin/doxygen/keepall.html">
+    <f:checkbox name="doxygen.keepall" checked="${instance.keepAll}" />
+    <label class="attach-previous">Retain doxygen for each successful build</label>
+  </f:entry>
+    		 
+</j:jelly>

@@ -162,13 +162,13 @@ public class DoxygenArchiver extends Publisher {
     	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
     	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
     	
-    	String doxyGenDir = "";
+    	String doxyGenDir = null;
     	if (outputDirectory!= null && outputDirectory.trim().length() != 0){
     		doxyGenDir = outputDirectory;    		
     	}
     	    	   
     	if (outputHTML!= null && outputHTML.trim().length() != 0){
-    		doxyGenDir = doxyGenDir + File.separator + outputHTML;
+    		doxyGenDir = (doxyGenDir!=null)?(doxyGenDir+ File.separator + outputHTML):outputHTML;
     		return build.getParent().getModuleRoot().child(doxyGenDir);
     	}    	
     	

@@ -2,7 +2,7 @@ package hudson.plugins.doxygen;
 
 import hudson.FilePath;
 import hudson.Launcher;
-
+import hudson.Util;
 import hudson.maven.AbstractMavenProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
@@ -35,7 +35,8 @@ import org.kohsuke.stapler.StaplerResponse;
 
 /**
  * 
- * @author Gregory BOISSINOT
+ * @author Gregory Boissinot
+ * @version 1.0 Initial Version
  */
 public class DoxygenArchiver extends Publisher {
 
@@ -52,9 +53,10 @@ public class DoxygenArchiver extends Publisher {
     
     public final static Descriptor<Publisher> DESCRIPTOR = new DoxygenArchiverDescriptor();
 
-    private static final String DOXYGEN_KEY_GENERATE_HTML =  "GENERATE_HTML";
-    private static final String DOXYGEN_KEY_HTML_OUTPUT   =  "HTML_OUTPUT";
-    private static final String DOXYGEN_VALUE_YES         =  "YES";
+    private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
+    private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
+    private static final String DOXYGEN_KEY_HTML_OUTPUT      =  "HTML_OUTPUT";
+    private static final String DOXYGEN_VALUE_YES            =  "YES";
    
 
     private Map<String, String> doxyfileInfos = new HashMap<String, String>();
@@ -93,11 +95,11 @@ public class DoxygenArchiver extends Publisher {
             return "/plugin/doxygen/help.html";
         }
         
+        
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             // Only generate Doxygen Archiver for free-style projects
             return !AbstractMavenProject.class.isAssignableFrom(jobType);
-        }        
-           
+        }      
     }
 
     private DoxygenArchiver(final String doxyfilePath, boolean keepAll) {
@@ -157,10 +159,19 @@ public class DoxygenArchiver extends Publisher {
      */
     private  FilePath getDoxygenGeneratedDir(AbstractBuild<?,?> build) {
         
-    	String outputHTML = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
-    	if (!outputHTML.isEmpty()){
-    		return build.getParent().getWorkspace().child(outputHTML);
+    	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
+    	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
+    	
+    	String doxyGenDir = "";
+    	if (outputDirectory!= null && outputDirectory.trim().length() != 0){
+    		doxyGenDir = outputDirectory;    		
     	}
+    	    	   
+    	if (outputHTML!= null && outputHTML.trim().length() != 0){
+    		doxyGenDir = doxyGenDir + File.separator + outputHTML;
+    		return build.getParent().getModuleRoot().child(doxyGenDir);
+    	}    	
+    	
     	return null;
     }        
     
@@ -205,8 +216,8 @@ public class DoxygenArchiver extends Publisher {
                     return true;
                 }
             } catch (IOException e) {
-                //Util.displayIOException(e,listener);
-                //e.printStackTrace(listener.fatalError(Messages.JavadocArchiver_UnableToCopy(javadoc,target)));
+                Util.displayIOException(e,listener);
+                e.printStackTrace(listener.fatalError("error"));
                 build.setResult(Result.FAILURE);
                 return true;
             }
@@ -302,7 +313,5 @@ public class DoxygenArchiver extends Publisher {
             return new File(build.getRootDir(),"doxygen/html");
         }
     }    
-    
-   
-    
+        
 }

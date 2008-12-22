@@ -10,7 +10,7 @@
 	<artifactId>doxygen</artifactId>
 	<packaging>hpi</packaging>
 	<name>Hudson Doxygen Plug-in</name>
-	<version>0.1</version>
+	<version>0.2-SNAPSHOT</version>
 	<url>http://hudson.gotdns.com/wiki/display/HUDSON/Doxygen+Plugin</url>
 
 	<scm>

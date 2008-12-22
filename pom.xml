@@ -15,8 +15,8 @@
 	<url>http://hudson.gotdns.com/wiki/display/HUDSON/Doxygen+Plugin</url>
 
 	<scm>
-		<connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/doxygen-1.0</connection>
-		<developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/doxygen-1.0</developerConnection>
-		<url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/doxygen/tags/doxygen-1.0</url>
+		<connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/doxygen-0.1</connection>
+		<developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/doxygen-0.1</developerConnection>
+		<url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/doxygen/tags/doxygen-0.1</url>
 	</scm>
 </project>

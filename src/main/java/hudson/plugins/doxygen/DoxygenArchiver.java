@@ -30,6 +30,7 @@ import java.util.Map;
 
 import javax.servlet.ServletException;
 
+import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
@@ -40,6 +41,15 @@ import org.kohsuke.stapler.StaplerResponse;
  */
 public class DoxygenArchiver extends Publisher {
 
+	
+    public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
+
+    private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
+    private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
+    private static final String DOXYGEN_KEY_HTML_OUTPUT      =  "HTML_OUTPUT";
+    private static final String DOXYGEN_VALUE_YES            =  "YES";
+   
+	
     /**
      * Path to the Doxyfile file.
      */    
@@ -50,17 +60,18 @@ public class DoxygenArchiver extends Publisher {
      */
     private final boolean keepAll;
     
+    /**
+     * The publishing type : with the doxyfile or directly the html directory
+     */
+    private final String publishType;    
     
-    public final static Descriptor<Publisher> DESCRIPTOR = new DoxygenArchiverDescriptor();
-
-    private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
-    private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
-    private static final String DOXYGEN_KEY_HTML_OUTPUT      =  "HTML_OUTPUT";
-    private static final String DOXYGEN_VALUE_YES            =  "YES";
-   
-
-    private Map<String, String> doxyfileInfos = new HashMap<String, String>();
-	
+    /**
+     * The doxygen html directory
+     */
+    private final String doxygenHtmlDirectory;
+    
+    private transient Map<String, String> doxyfileInfos = new HashMap<String, String>();
+    
     
 	public String getDoxyfilePath(){
 		return doxyfilePath;
@@ -70,9 +81,20 @@ public class DoxygenArchiver extends Publisher {
         return keepAll;
     }
 	
-    
+	public String getPublishType(){
+		return publishType;
+	}	
+
+	public String getDoxygenHtmlDirectory() {
+		return doxygenHtmlDirectory;
+	}  
+	
     public static final class DoxygenArchiverDescriptor extends BuildStepDescriptor<Publisher>{
 
+    	public  static final String DOXYGEN_DOXYFILE_PUBLISHTYPE="DoxyFile";
+    	public  static final String DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE="HtmlDirectory";
+    	public  static final String DEFAULT_DOXYGEN_PUBLISHTYPE=DOXYGEN_DOXYFILE_PUBLISHTYPE;
+    	
         public DoxygenArchiverDescriptor() {
             super(DoxygenArchiver.class);
         }
@@ -85,7 +107,9 @@ public class DoxygenArchiver extends Publisher {
         @Override
         public Publisher newInstance(StaplerRequest req) throws FormException {
             Publisher p = new DoxygenArchiver(
-                    req.getParameter("doxygen.doxyfilePath"),
+            		req.getParameter("doxygen.publishType"), 
+            		req.getParameter("doxygen.doxyfilePath"),
+                    req.getParameter("doxygen.doxygenHtmlDirectory"),
                     req.getParameter("doxygen.keepall")!=null);
             return p;
         }
@@ -102,9 +126,13 @@ public class DoxygenArchiver extends Publisher {
         }      
     }
 
-    private DoxygenArchiver(final String doxyfilePath, boolean keepAll) {
+    @DataBoundConstructor
+    private DoxygenArchiver(final String publishType, final String doxyfilePath, final String doxygenHtmlDirectory, boolean keepAll) {
+    	this.publishType=publishType;
     	this.doxyfilePath = doxyfilePath.trim();
+    	this.doxygenHtmlDirectory=doxygenHtmlDirectory;
     	this.keepAll= keepAll;
+
     }
 
     @Override
@@ -194,39 +222,71 @@ public class DoxygenArchiver extends Publisher {
     public boolean perform(AbstractBuild<?,?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
     	    
-    	//Load the Doxyfile
-    	loadDoxyFile(build.getParent().getWorkspace().child(doxyfilePath));
     	
-    	//Process if the generate htnl tag is set to 'YES'
-    	if (isDoxygenGenerateHtml()){
+    	listener.getLogger().println("Publishing Doxygen HTML results.");
+    	
+    	FilePath doxygenGenerateDir = null;
+    	if (publishType!=null && publishType.equals(DESCRIPTOR.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE)){
     		
-    		//Retrieve the generate doxygen directory from the build
-            FilePath doxygenGenerateDir = getDoxygenGeneratedDir(build);
-            
-            //Determine the stored doxygen directory
-            FilePath target = new FilePath(keepAll ? getDoxygenDir(build) : getDoxygenDir(build.getProject()));    	
+    		listener.getLogger().println("Using the given doxygen html directory relative to the root of the workspace.");	
+    		
+    		doxygenGenerateDir = new FilePath(build.getProject().getModuleRoot(),doxygenHtmlDirectory);
+    		
+    		listener.getLogger().println("The generated doxygen directory is "+ doxygenGenerateDir);
+    		
+    	}
+    	else {
+    		
+    		listener.getLogger().println("Using the Doxyfile information.");
+    		
+        	//Load the Doxyfile
+        	loadDoxyFile(build.getParent().getWorkspace().child(doxyfilePath));
+        	
+        	//Process if the generate htnl tag is set to 'YES'
+        	if (isDoxygenGenerateHtml()){
+        		
+        		//Retrieve the generate doxygen directory from the build
+                doxygenGenerateDir = getDoxygenGeneratedDir(build);
+                
+        		listener.getLogger().println("The generated doxygen directory is "+ doxygenGenerateDir);
+        	}
+        	else {
+        		
+        		//never even
+        	}
+    		
+    		
+    	}
+    	
+        //Determine the stored doxygen directory
+        FilePath target = new FilePath(keepAll ? getDoxygenDir(build) : getDoxygenDir(build.getProject()));    	
 
-            try {
-                if (doxygenGenerateDir.copyRecursiveTo("**/*",target)==0) {
-                    if(build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
-                        // If the build failed, don't complain that there was no javadoc.
-                        // The build probably didn't even get to the point where it produces javadoc. 
-                    }
-                    build.setResult(Result.FAILURE);
-                    return true;
+        try {
+            if (doxygenGenerateDir.copyRecursiveTo("**/*",target)==0) {
+                if(build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
+                    // If the build failed, don't complain that there was no javadoc.
+                    // The build probably didn't even get to the point where it produces javadoc. 
                 }
-            } catch (IOException e) {
-                Util.displayIOException(e,listener);
-                e.printStackTrace(listener.fatalError("error"));
+                
+        		listener.getLogger().println("Failure to copy the generated doxygen html documentation at '" +doxygenHtmlDirectory + "' to '" + target + "'");
+                
                 build.setResult(Result.FAILURE);
                 return true;
             }
-            
-            // add build action, if doxygen is recorded for each build
-            if(keepAll)                
-            	build.addAction(new DoxygenBuildAction(build));		
-    	}
+        } catch (IOException e) {
+            Util.displayIOException(e,listener);
+            e.printStackTrace(listener.fatalError("error"));
+            build.setResult(Result.FAILURE);
+            return true;
+        }
+        
+        // add build action, if doxygen is recorded for each build
+        if(keepAll)                
+        	build.addAction(new DoxygenBuildAction(build));		
 
+
+        listener.getLogger().println("End publishing Doxygen HTML results.");
+        
 		return true;
 	}
 
@@ -312,6 +372,8 @@ public class DoxygenArchiver extends Publisher {
         protected File dir() {
             return new File(build.getRootDir(),"doxygen/html");
         }
-    }    
+    }
+
+  
         
 }

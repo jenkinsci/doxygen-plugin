@@ -150,14 +150,19 @@ public class DoxygenArchiver extends Publisher {
     /**
      * Load the Doxyfile Doxygen file in memory
      */
-    private void loadDoxyFile(FilePath doxyfilePath) 
+    private void loadDoxyFile(BuildListener listener, FilePath doxyfilePath) 
     throws FileNotFoundException, IOException, InterruptedException{
     
+    	listener.getLogger().println("The full Doxyfile path '"+doxyfilePath.toURI()+"'.");
+    	
     	final String separator = "=";
 		InputStream ips=new FileInputStream(new File(doxyfilePath.toURI())); 
 		InputStreamReader ipsr=new InputStreamReader(ips);
 		BufferedReader br=new BufferedReader(ipsr);
-		String line;
+		String line=null;
+		if (doxyfileInfos==null){
+			doxyfileInfos=new HashMap<String, String>();
+		}
 		while ((line=br.readLine())!=null){
 			if (line.indexOf(separator)!=-1){
 				String[] elements = line.split(separator);
@@ -174,8 +179,10 @@ public class DoxygenArchiver extends Publisher {
      */
     private boolean isDoxygenGenerateHtml(){
     	
-    	String valGenerateHtml = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);
+    	if (doxyfileInfos==null)
+    		return false;
     	
+    	String valGenerateHtml = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);    	
     	if (valGenerateHtml!=null)
     		return valGenerateHtml.equalsIgnoreCase(DOXYGEN_VALUE_YES);
     	
@@ -187,6 +194,9 @@ public class DoxygenArchiver extends Publisher {
      */
     private  FilePath getDoxygenGeneratedDir(AbstractBuild<?,?> build) {
         
+    	if (doxyfileInfos==null)
+    		return null;
+    	
     	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
     	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
     	
@@ -237,10 +247,10 @@ public class DoxygenArchiver extends Publisher {
     	}
     	else {
     		
-    		listener.getLogger().println("Using the Doxyfile information.");
+    		listener.getLogger().println("Using the Doxyfile file '"+doxyfilePath+"'.");
     		
         	//Load the Doxyfile
-        	loadDoxyFile(build.getParent().getWorkspace().child(doxyfilePath));
+        	loadDoxyFile(listener, build.getProject().getWorkspace().child(doxyfilePath));
         	
         	//Process if the generate htnl tag is set to 'YES'
         	if (isDoxygenGenerateHtml()){

@@ -37,7 +37,6 @@ import org.kohsuke.stapler.StaplerResponse;
 /**
  * 
  * @author Gregory Boissinot
- * @version 1.0 Initial Version
  */
 public class DoxygenArchiver extends Publisher {
 
@@ -47,6 +46,8 @@ public class DoxygenArchiver extends Publisher {
     private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
     private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
     private static final String DOXYGEN_KEY_HTML_OUTPUT      =  "HTML_OUTPUT";
+    private static final String DOXYGEN_DEFAULT_HTML_OUTPUT  =  "html";
+    
     private static final String DOXYGEN_VALUE_YES            =  "YES";
    
 	
@@ -153,7 +154,7 @@ public class DoxygenArchiver extends Publisher {
     private void loadDoxyFile(BuildListener listener, FilePath doxyfilePath) 
     throws FileNotFoundException, IOException, InterruptedException{
     
-    	listener.getLogger().println("The full Doxyfile path '"+doxyfilePath.toURI()+"'.");
+    	listener.getLogger().println("The Doxyfile path is '"+doxyfilePath.toURI()+"'.");
     	
     	final String separator = "=";
 		InputStream ips=new FileInputStream(new File(doxyfilePath.toURI())); 
@@ -177,35 +178,34 @@ public class DoxygenArchiver extends Publisher {
     /**
      * Determine if Doxygen generate HTML reports 
      */
-    private boolean isDoxygenGenerateHtml(){
-    	
+    private boolean isDoxygenGenerateHtml(){    	
     	if (doxyfileInfos==null)
     		return false;
     	
-    	String valGenerateHtml = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);    	
-    	if (valGenerateHtml!=null)
-    		return valGenerateHtml.equalsIgnoreCase(DOXYGEN_VALUE_YES);
-    	
-    	return false;	
+    	return DOXYGEN_VALUE_YES.equalsIgnoreCase(doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML));
     }
     
     /**
      * Gets the directory where the Doxygen is generated for the given build.
      */
-    private  FilePath getDoxygenGeneratedDir(AbstractBuild<?,?> build) {
+    private  FilePath getDoxygenGeneratedDir(AbstractBuild<?,?> build, BuildListener listener) {
         
     	if (doxyfileInfos==null)
     		return null;
     	
-    	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
-    	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
     	
+    	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);    	
     	String doxyGenDir = null;
     	if (outputDirectory!= null && outputDirectory.trim().length() != 0){
     		doxyGenDir = outputDirectory;    		
     	}
-    	    	   
-    	if (outputHTML!= null && outputHTML.trim().length() != 0){
+    	
+    	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
+    	if (outputHTML== null || outputHTML.trim().length() == 0){
+    		outputHTML = "html";
+    		listener.getLogger().println("The "+DOXYGEN_KEY_HTML_OUTPUT+" tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT+ " will be used as the default path.");
+    	}
+    	else {
     		doxyGenDir = (doxyGenDir!=null)?(doxyGenDir+ File.separator + outputHTML):outputHTML;
     		return build.getParent().getModuleRoot().child(doxyGenDir);
     	}    	
@@ -238,16 +238,14 @@ public class DoxygenArchiver extends Publisher {
     	FilePath doxygenGenerateDir = null;
     	if (publishType!=null && publishType.equals(DESCRIPTOR.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE)){
     		
-    		listener.getLogger().println("Using the given doxygen html directory relative to the root of the workspace.");	
-    		
-    		doxygenGenerateDir = new FilePath(build.getProject().getModuleRoot(),doxygenHtmlDirectory);
-    		
-    		listener.getLogger().println("The generated doxygen directory is "+ doxygenGenerateDir);
+    		listener.getLogger().println("Using the Doxygen HTML directory specified by the configuration.");    		
+    		doxygenGenerateDir = new FilePath(build.getProject().getModuleRoot(),doxygenHtmlDirectory);    		
+    		listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGenerateDir+"'.");
     		
     	}
     	else {
     		
-    		listener.getLogger().println("Using the Doxyfile file '"+doxyfilePath+"'.");
+    		listener.getLogger().println("Using the Doxyfile information.");
     		
         	//Load the Doxyfile
         	loadDoxyFile(listener, build.getProject().getWorkspace().child(doxyfilePath));
@@ -256,13 +254,20 @@ public class DoxygenArchiver extends Publisher {
         	if (isDoxygenGenerateHtml()){
         		
         		//Retrieve the generate doxygen directory from the build
-                doxygenGenerateDir = getDoxygenGeneratedDir(build);
-                
-        		listener.getLogger().println("The generated doxygen directory is "+ doxygenGenerateDir);
+                doxygenGenerateDir = getDoxygenGeneratedDir(build, listener);                
+        		listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGenerateDir +"'.");
+        		if (!doxygenGenerateDir.exists()){
+        			listener.getLogger().println("[ERROR] - The directory '"+ doxygenGenerateDir + "' doesn't exist.");
+                    build.setResult(Result.FAILURE);
+                    return true;
+        		}
         	}
         	else {
         		
-        		//never even
+        		//The GENERATE_HTML tag is not set to 'YES'
+        		listener.getLogger().println("The tag "+DOXYGEN_KEY_GENERATE_HTML+" is not present or is not set to '" + DOXYGEN_VALUE_YES+ "'. The Doxygen plugin publishes only HTML documentations.");
+                build.setResult(Result.FAILURE);
+                return true;
         	}
     		
     		

@@ -182,7 +182,14 @@ public class DoxygenArchiver extends Publisher {
     	if (doxyfileInfos==null)
     		return false;
     	
-    	return DOXYGEN_VALUE_YES.equalsIgnoreCase(doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML));
+    	String generatedHtmlKeyVal = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);
+    	
+    	// If the 'GENERATE_HTML Key is not present, by default the HTML generated documentation is actived.
+    	if (generatedHtmlKeyVal==null){
+    		return true;
+    	}
+    	
+    	return DOXYGEN_VALUE_YES.equalsIgnoreCase(generatedHtmlKeyVal);
     }
     
     /**
@@ -265,7 +272,7 @@ public class DoxygenArchiver extends Publisher {
         	else {
         		
         		//The GENERATE_HTML tag is not set to 'YES'
-        		listener.getLogger().println("The tag "+DOXYGEN_KEY_GENERATE_HTML+" is not present or is not set to '" + DOXYGEN_VALUE_YES+ "'. The Doxygen plugin publishes only HTML documentations.");
+        		listener.getLogger().println("The tag "+DOXYGEN_KEY_GENERATE_HTML+" is not set to '" + DOXYGEN_VALUE_YES+ "'. The Doxygen plugin publishes only HTML documentations.");
                 build.setResult(Result.FAILURE);
                 return true;
         	}

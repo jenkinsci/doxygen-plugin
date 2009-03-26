@@ -3,7 +3,6 @@ package hudson.plugins.doxygen;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.maven.AbstractMavenProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
@@ -25,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,10 +38,12 @@ import org.kohsuke.stapler.StaplerResponse;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Publisher {
+public class DoxygenArchiver extends Publisher implements Serializable{
 
-	
-    public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
+
+	private static final long serialVersionUID = 1L;
+
+	public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
 
     private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
     private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
@@ -122,8 +124,7 @@ public class DoxygenArchiver extends Publisher {
         
         
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-            // Only generate Doxygen Archiver for free-style projects
-            return !AbstractMavenProject.class.isAssignableFrom(jobType);
+        	return true;	
         }      
     }
 

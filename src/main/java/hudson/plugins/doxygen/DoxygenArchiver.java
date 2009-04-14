@@ -2,7 +2,6 @@ package hudson.plugins.doxygen;
 
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
@@ -17,16 +16,9 @@ import hudson.model.Run;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.ServletException;
 
@@ -45,13 +37,7 @@ public class DoxygenArchiver extends Publisher implements Serializable{
 
 	public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
 
-    private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY =  "OUTPUT_DIRECTORY";
-    private static final String DOXYGEN_KEY_GENERATE_HTML    =  "GENERATE_HTML";
-    private static final String DOXYGEN_KEY_HTML_OUTPUT      =  "HTML_OUTPUT";
-    private static final String DOXYGEN_DEFAULT_HTML_OUTPUT  =  "html";
-    
-    private static final String DOXYGEN_VALUE_YES            =  "YES";
-   
+
 	
     /**
      * Path to the Doxyfile file.
@@ -73,8 +59,7 @@ public class DoxygenArchiver extends Publisher implements Serializable{
      */
     private final String doxygenHtmlDirectory;
     
-    private transient Map<String, String> doxyfileInfos = new HashMap<String, String>();
-    
+
     
 	public String getDoxyfilePath(){
 		return doxyfilePath;
@@ -129,7 +114,7 @@ public class DoxygenArchiver extends Publisher implements Serializable{
     }
 
     @DataBoundConstructor
-    private DoxygenArchiver(final String publishType, final String doxyfilePath, final String doxygenHtmlDirectory, boolean keepAll) {
+    public DoxygenArchiver(final String publishType, final String doxyfilePath, final String doxygenHtmlDirectory, boolean keepAll) {
     	this.publishType=publishType;
     	this.doxyfilePath = doxyfilePath.trim();
     	this.doxygenHtmlDirectory=doxygenHtmlDirectory;
@@ -146,80 +131,7 @@ public class DoxygenArchiver extends Publisher implements Serializable{
     public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
         return true;
     }
-        
-
-    
-    /**
-     * Load the Doxyfile Doxygen file in memory
-     */
-    private void loadDoxyFile(BuildListener listener, FilePath doxyfilePath) 
-    throws FileNotFoundException, IOException, InterruptedException{
-    
-    	listener.getLogger().println("The Doxyfile path is '"+doxyfilePath.toURI()+"'.");
-    	
-    	final String separator = "=";
-		InputStream ips=new FileInputStream(new File(doxyfilePath.toURI())); 
-		InputStreamReader ipsr=new InputStreamReader(ips);
-		BufferedReader br=new BufferedReader(ipsr);
-		String line=null;
-		if (doxyfileInfos==null){
-			doxyfileInfos=new HashMap<String, String>();
-		}
-		while ((line=br.readLine())!=null){
-			if (line.indexOf(separator)!=-1){
-				String[] elements = line.split(separator);
-				doxyfileInfos.put(elements[0].trim(), elements[1].trim());
-			}
-		}
-		br.close(); 
-		ipsr.close();
-		ips.close();
-    }
-   
-    /**
-     * Determine if Doxygen generate HTML reports 
-     */
-    private boolean isDoxygenGenerateHtml(){    	
-    	if (doxyfileInfos==null)
-    		return false;
-    	
-    	String generatedHtmlKeyVal = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);
-    	
-    	// If the 'GENERATE_HTML Key is not present, by default the HTML generated documentation is actived.
-    	if (generatedHtmlKeyVal==null){
-    		return true;
-    	}
-    	
-    	return DOXYGEN_VALUE_YES.equalsIgnoreCase(generatedHtmlKeyVal);
-    }
-    
-    /**
-     * Gets the directory where the Doxygen is generated for the given build.
-     */
-    private  FilePath getDoxygenGeneratedDir(AbstractBuild<?,?> build, BuildListener listener) {
-        
-    	if (doxyfileInfos==null)
-    		return null;
-    	
-    	
-    	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);    	
-    	String doxyGenDir = null;
-    	if (outputDirectory!= null && outputDirectory.trim().length() != 0){
-    		doxyGenDir = outputDirectory;    		
-    	}
-    	
-    	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
-    	if (outputHTML== null || outputHTML.trim().length() == 0){
-    		outputHTML = "html";
-    		listener.getLogger().println("The "+DOXYGEN_KEY_HTML_OUTPUT+" tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT+ " will be used as the default path.");
-    	}
-    	else {
-    		doxyGenDir = (doxyGenDir!=null)?(doxyGenDir+ File.separator + outputHTML):outputHTML;
-    		return build.getParent().getModuleRoot().child(doxyGenDir);
-    	}    	
-    	
-    	return null;
-    }        
+      
     
     /**
      * Gets the directory where the Doxygen is stored for the given project.
@@ -234,84 +146,54 @@ public class DoxygenArchiver extends Publisher implements Serializable{
     private static File getDoxygenDir(Run run) {
         return new File(run.getRootDir(),"doxygen/html");
     }    
-    
+
+	
     @SuppressWarnings("unchecked")
     @Override
     public boolean perform(AbstractBuild<?,?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
     	    
-    	
     	listener.getLogger().println("Publishing Doxygen HTML results.");
     	
-    	FilePath doxygenGenerateDir = null;
-    	if (publishType!=null && publishType.equals(DESCRIPTOR.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE)){
-    		
-    		listener.getLogger().println("Using the Doxygen HTML directory specified by the configuration.");    		
-    		doxygenGenerateDir = new FilePath(build.getProject().getModuleRoot(),doxygenHtmlDirectory);    		
-    		listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGenerateDir+"'.");
-    		
-    	}
-    	else {
-    		
-    		listener.getLogger().println("Using the Doxyfile information.");
-    		
-        	//Load the Doxyfile
-        	loadDoxyFile(listener, build.getProject().getWorkspace().child(doxyfilePath));
-        	
-        	//Process if the generate htnl tag is set to 'YES'
-        	if (isDoxygenGenerateHtml()){
-        		
-        		//Retrieve the generate doxygen directory from the build
-                doxygenGenerateDir = getDoxygenGeneratedDir(build, listener);                
-        		listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGenerateDir +"'.");
-        		if (!doxygenGenerateDir.exists()){
-        			listener.getLogger().println("[ERROR] - The directory '"+ doxygenGenerateDir + "' doesn't exist.");
-                    build.setResult(Result.FAILURE);
-                    return true;
-        		}
-        	}
-        	else {
-        		
-        		//The GENERATE_HTML tag is not set to 'YES'
-        		listener.getLogger().println("The tag "+DOXYGEN_KEY_GENERATE_HTML+" is not set to '" + DOXYGEN_VALUE_YES+ "'. The Doxygen plugin publishes only HTML documentations.");
-                build.setResult(Result.FAILURE);
-                return true;
-        	}
-    		
-    		
-    	}
-    	
-        //Determine the stored doxygen directory
-        FilePath target = new FilePath(keepAll ? getDoxygenDir(build) : getDoxygenDir(build.getProject()));    	
+    	try{
+    		DoxygenDirectoryParser parser = new DoxygenDirectoryParser(listener.getLogger(), publishType, doxyfilePath,doxygenHtmlDirectory);
+    		FilePath doxygenGeneratedDir  = build.getProject().getWorkspace().act(parser);
 
-        try {
-            if (doxygenGenerateDir.copyRecursiveTo("**/*",target)==0) {
+        	listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGeneratedDir+"'.");
+
+            //Determine the future stored doxygen directory
+            FilePath target = new FilePath(keepAll ? getDoxygenDir(build) : getDoxygenDir(build.getProject()));    	
+
+
+            if (doxygenGeneratedDir.copyRecursiveTo("**/*",target)==0) {
                 if(build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
                     // If the build failed, don't complain that there was no javadoc.
                     // The build probably didn't even get to the point where it produces javadoc. 
                 }
                 
-        		listener.getLogger().println("Failure to copy the generated doxygen html documentation at '" +doxygenHtmlDirectory + "' to '" + target + "'");
+                listener.getLogger().println("Failure to copy the generated doxygen html documentation at '" +doxygenHtmlDirectory + "' to '" + target + "'");
                 
                 build.setResult(Result.FAILURE);
                 return true;
             }
-        } catch (IOException e) {
-            Util.displayIOException(e,listener);
+    		
+    		
+    		// add build action, if doxygen is recorded for each build
+            if(keepAll)                
+            	build.addAction(new DoxygenBuildAction(build));		
+            
+        } 
+    	catch (Exception e) {
             e.printStackTrace(listener.fatalError("error"));
             build.setResult(Result.FAILURE);
             return true;
         }
         
-        // add build action, if doxygen is recorded for each build
-        if(keepAll)                
-        	build.addAction(new DoxygenBuildAction(build));		
-
-
-        listener.getLogger().println("End publishing Doxygen HTML results.");
-        
+        listener.getLogger().println("End publishing Doxygen HTML results.");        
 		return true;
 	}
+
+
 
 
     public Descriptor<Publisher> getDescriptor() {
@@ -396,7 +278,5 @@ public class DoxygenArchiver extends Publisher implements Serializable{
             return new File(build.getRootDir(),"doxygen/html");
         }
     }
-
-  
-        
+   
 }

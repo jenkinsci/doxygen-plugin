@@ -65,7 +65,7 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     	
      	
     	DoxygenDirectoryParser doxygenDirectoryParser =     		
-    		new DoxygenDirectoryParser(logger,DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"",doxygenFolderResultName);
+    		new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"",doxygenFolderResultName);
     	
         classContext.checking(new Expectations() {
             {
@@ -90,7 +90,7 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     	doxygenDir.mkdirs();
      	
     	DoxygenDirectoryParser doxygenDirectoryParser =     		
-    		new DoxygenDirectoryParser(logger,DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"","");
+    		new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"","");
     	
         classContext.checking(new Expectations() {
             {
@@ -121,7 +121,7 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     	
      	
     	DoxygenDirectoryParser doxygenDirectoryParser =     		
-    		new DoxygenDirectoryParser(logger,DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"","wrong");
+    		new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE ,"","wrong");
     	
         classContext.checking(new Expectations() {
             {
@@ -175,7 +175,7 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     	
     	
     	DoxygenDirectoryParser doxygenDirectoryParser =     		
-    		new DoxygenDirectoryParser(logger,DoxygenArchiverDescriptor.DOXYGEN_DOXYFILE_PUBLISHTYPE ,"Doxyfile","");
+    		new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_DOXYFILE_PUBLISHTYPE ,"Doxyfile","");
     	
         classContext.checking(new Expectations() {
             {

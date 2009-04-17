@@ -156,7 +156,7 @@ public class DoxygenArchiver extends Publisher implements Serializable{
     	listener.getLogger().println("Publishing Doxygen HTML results.");
     	
     	try{
-    		DoxygenDirectoryParser parser = new DoxygenDirectoryParser(listener.getLogger(), publishType, doxyfilePath,doxygenHtmlDirectory);
+    		DoxygenDirectoryParser parser = new DoxygenDirectoryParser(publishType, doxyfilePath,doxygenHtmlDirectory);
     		FilePath doxygenGeneratedDir  = build.getProject().getWorkspace().act(parser);
 
         	listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGeneratedDir+"'.");

@@ -20,11 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, Serializable{
 
 
+	
 	private static final long serialVersionUID = 1L;
+	
+    private static final Pattern DRIVE_PATTERN = Pattern.compile("[A-Za-z]:\\\\.+");
 	
     private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
 	
@@ -160,55 +164,96 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 					doxyfileInfos.put(elements[0].trim(), elements[1].trim());
 				}
 			}
-
-			
 		}
 		br.close(); 
 		ipsr.close();
 		ips.close();
     }    
 	
-    private void processIncludeFile(List<String> doxyfileDirectories, FilePath parentFile, String includeStr) 
+    
+    private static boolean isAbsolute(String rel) {
+        return rel.startsWith("/") || DRIVE_PATTERN.matcher(rel).matches();
+    }
+
+    
+    private void processIncludeFileWithNoIncludedDirectories(FilePath parentFile, String includedFile) 
+    throws FileNotFoundException, IOException, InterruptedException{
+    	
+		FilePath includedFilePath = isAbsolute(includedFile)?new FilePath(new File(includedFile)):new FilePath(parentFile,includedFile);		
+    	if (!includedFilePath.exists()){
+    		throw new AbortException("Doxyfile is incorrect. Included file '" + includedFile + "' doesn't exist.");
+    	}
+    	
+    	//Call again loadDoxyFile with the the included doxygen file path
+    	loadDoxyFile(includedFilePath);
+    }
+
+    private void processIncludeFileWithIncludedDirectories(List<String> doxyfileDirectories,FilePath parentFile, String includedFile) 
+    throws FileNotFoundException, IOException, InterruptedException{
+    	
+		FilePath includedFilePath = null;
+    	boolean findIncludedFileInDirectories = false;
+    	   	
+    	//Determine if the included doxygen file is absolute
+    	if (isAbsolute(includedFile)){
+	        //Call again loadDoxyFile with the the included doxygen file path
+    		loadDoxyFile(new FilePath(new File(includedFile)));
+    		return;
+    	}
+    	
+    	// else, test if the included doxygen file is at the parent root
+    	if ((includedFilePath=new FilePath(parentFile,includedFile)).exists()){
+	        //Call again loadDoxyFile with the the included doxygen file path
+    		loadDoxyFile(includedFilePath);
+    		return;
+    	}
+    	
+    	
+    	// else, iterate on each included directory for retrieve the included doxygen file
+		for (String doxyfileDirectory : doxyfileDirectories){
+			
+			//Retrieve the filepath for the included directory (it can be absolute)
+			FilePath directoryFilePath=isAbsolute(doxyfileDirectory)?new FilePath(new File(doxyfileDirectory)):new FilePath(parentFile,doxyfileDirectory);
+			
+			//If the current included directory doesn't exist, continue, no errors
+			if (!directoryFilePath.exists()){
+				continue;
+			}
+
+			//Retrieve the filepath for the included doxygen file
+			includedFilePath=new FilePath(directoryFilePath,includedFile);			
+        	
+			//At this point, if the computed included file doesn't exist, perhaps, it's included in the next directory in directories list
+			if (!includedFilePath.exists()){
+        		continue;
+        	}
+			
+	        //Call again loadDoxyFile with the the included doxygen file path
+			loadDoxyFile(includedFilePath);	
+			findIncludedFileInDirectories = true;
+			break;
+		}		
+		
+		//At this point, the included doxygen file path is not determined 
+		//Never happen, check by the doxygen tool
+		if (!findIncludedFileInDirectories){  
+        	throw new AbortException("Doxyfile is incorrect. Included file '" + includedFile + "' doesn't exist.");
+        }
+    }    
+    
+    
+    private void processIncludeFile(List<String> doxyfileDirectories, FilePath parentFile, String includedFile) 
     throws FileNotFoundException, IOException, InterruptedException{
 
-    	boolean find = false;
-    	
+    	//We haven't any @INCLUDE_PATH
     	if (doxyfileDirectories==null || doxyfileDirectories.isEmpty()){
-        	FilePath includedFilePath = new FilePath(parentFile,includeStr);
-        	if (!includedFilePath.exists()){
-        		throw new AbortException("Doxyfile is incorrect. Included file '" + includeStr + "' doesn't exist.");
-        	}
-        	
-        	loadDoxyFile(includedFilePath);
-    	}
-    	else{
-    		for (String doxyfileDirectory : doxyfileDirectories){
-    			
-    			FilePath directoryFilePath=new FilePath(parentFile,doxyfileDirectory);
-    			if (!directoryFilePath.exists()){
-    				continue;
-    			}
-    			FilePath includedFilePath= new FilePath(directoryFilePath,includeStr);
-    			if (!includedFilePath.exists()){
-    				continue;
-    			}
-    			else {
-    				loadDoxyFile(includedFilePath);	
-    				find = true;
-    				break;
-    			}
-    		}
-    		if (!find){
-            	FilePath includedFilePath = new FilePath(parentFile,includeStr);
-            	if (!includedFilePath.exists()){
-            		throw new AbortException("Doxyfile is incorrect. Included file '" + includeStr + "' doesn't exist.");
-            	}
-            	
-            	loadDoxyFile(includedFilePath);
-    		}
+    		processIncludeFileWithNoIncludedDirectories(parentFile,includedFile);
     	}
     	
-
+    	//We have some  @INCLUDE_PATH
+    	else{    		
+    		processIncludeFileWithIncludedDirectories(doxyfileDirectories, parentFile,includedFile);
+    	}
 	}
 
 	/**
@@ -222,7 +267,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 		LOGGER.log(Level.INFO,"Using the Doxyfile information.");
 		
 		//Load the Doxyfile
-		loadDoxyFile(base.child(doxyfilePath));
+		loadDoxyFile(base.child(doxyfilePath));		
 		
 		//Process if the generate htnl tag is set to 'YES'
 		if (isDoxygenGenerateHtml()){

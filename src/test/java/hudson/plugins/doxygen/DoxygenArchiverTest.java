@@ -31,7 +31,6 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     private Mockery classContext;
     private BuildListener taskListener;
     private VirtualChannel virtualChannel;
-    private PrintStream logger;
 
     @Before
     public void setUp() throws Exception {
@@ -46,7 +45,6 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
         
         taskListener = context.mock(BuildListener.class);
         virtualChannel = context.mock(VirtualChannel.class);
-        logger= new PrintStream(new ByteArrayOutputStream());   
     }
 
     @After

@@ -1,0 +1,20 @@
+CCCC_Module@App@class@
+CCCC_ModExt@App@class@App.java@7@definition@?????@LOC:3 COM:4 MVG:0@?@d@
+CCCC_Module@String[]@@
+CCCC_Module@char@builtin@
+CCCC_ModExt@char@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Module@double@builtin@
+CCCC_ModExt@double@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Module@float@builtin@
+CCCC_ModExt@float@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Module@int@builtin@
+CCCC_ModExt@int@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Module@long@builtin@
+CCCC_ModExt@long@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Module@void@builtin@
+CCCC_ModExt@void@builtin@<nofile>@0@builtin definition@d?????@@0@d@
+CCCC_Member@App@main@void@(String[])@
+CCCC_MemExt@App@main@void@(String[])@App.java@9@definition@????0@LOC:4 COM:0 MVG:0@?@d@
+CCCC_UseRel@String[]@App@
+CCCC_UseExt@String[]@App@App.java@9@normal parameter@????0@*@?@p@
+CCCC_RejExt@App.java@1@<file scope items>@?????@LOC:1 COM:0 MVG:0@?@r@

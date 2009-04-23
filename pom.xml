@@ -11,7 +11,7 @@
 	<packaging>hpi</packaging>
 	<name>Hudson Doxygen Plug-in</name>
 	<version>0.4-SNAPSHOT</version>
-	<url>http://hudson.gotdns.com/wiki/display/HUDSON/Doxygen+Plugin</url>
+	<url>http://wiki.hudson-ci.org/display/HUDSON/Doxygen+Plugin</url>
 
 	<dependencies>
 		<dependency>

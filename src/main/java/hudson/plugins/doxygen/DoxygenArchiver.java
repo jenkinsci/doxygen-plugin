@@ -30,253 +30,257 @@ import org.kohsuke.stapler.StaplerResponse;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Publisher implements Serializable{
-
+public class DoxygenArchiver extends Publisher implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
 
+	/**
+	 * Path to the Doxyfile file.
+	 */
+	private final String doxyfilePath;
 
-	
-    /**
-     * Path to the Doxyfile file.
-     */    
-    private final String doxyfilePath;    
+	/**
+	 * If true, retain doxygen for all the successful builds.
+	 */
+	private final boolean keepAll;
 
-    /**
-     * If true, retain doxygen for all the successful builds.
-     */
-    private final boolean keepAll;
-    
-    /**
-     * The publishing type : with the doxyfile or directly the html directory
-     */
-    private final String publishType;    
-    
-    /**
-     * The doxygen html directory
-     */
-    private final String doxygenHtmlDirectory;
-    
+	/**
+	 * The publishing type : with the doxyfile or directly the html directory
+	 */
+	private final String publishType;
 
-    
-	public String getDoxyfilePath(){
+	/**
+	 * The doxygen html directory
+	 */
+	private final String doxygenHtmlDirectory;
+
+	public String getDoxyfilePath() {
 		return doxyfilePath;
-	}	
-	
-    public boolean isKeepAll() {
-        return keepAll;
-    }
-	
-	public String getPublishType(){
+	}
+
+	public boolean isKeepAll() {
+		return keepAll;
+	}
+
+	public String getPublishType() {
 		return publishType;
-	}	
+	}
 
 	public String getDoxygenHtmlDirectory() {
 		return doxygenHtmlDirectory;
-	}  
-	
-    public static final class DoxygenArchiverDescriptor extends BuildStepDescriptor<Publisher>{
+	}
 
-    	public  static final String DOXYGEN_DOXYFILE_PUBLISHTYPE="DoxyFile";
-    	public  static final String DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE="HtmlDirectory";
-    	public  static final String DEFAULT_DOXYGEN_PUBLISHTYPE=DOXYGEN_DOXYFILE_PUBLISHTYPE;
-    	
-        public DoxygenArchiverDescriptor() {
-            super(DoxygenArchiver.class);
-        }
+	public static final class DoxygenArchiverDescriptor extends
+			BuildStepDescriptor<Publisher> {
 
-        @Override
-        public String getDisplayName() {
-            return "Publish Doxygen";
-        }
+		public static final String DOXYGEN_DOXYFILE_PUBLISHTYPE = "DoxyFile";
+		public static final String DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE = "HtmlDirectory";
+		public static final String DEFAULT_DOXYGEN_PUBLISHTYPE = DOXYGEN_DOXYFILE_PUBLISHTYPE;
 
-        @Override
-        public Publisher newInstance(StaplerRequest req) throws FormException {
-            Publisher p = new DoxygenArchiver(
-            		req.getParameter("doxygen.publishType"), 
-            		req.getParameter("doxygen.doxyfilePath"),
-                    req.getParameter("doxygen.doxygenHtmlDirectory"),
-                    req.getParameter("doxygen.keepall")!=null);
-            return p;
-        }
+		public DoxygenArchiverDescriptor() {
+			super(DoxygenArchiver.class);
+		}
 
-        @Override
-        public String getHelpFile() {
-            return "/plugin/doxygen/help.html";
-        }
-        
-        
-        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-        	return true;	
-        }      
-    }
+		@Override
+		public String getDisplayName() {
+			return "Publish Doxygen";
+		}
 
-    @DataBoundConstructor
-    public DoxygenArchiver(final String publishType, final String doxyfilePath, final String doxygenHtmlDirectory, boolean keepAll) {
-    	this.publishType=publishType;
-    	this.doxyfilePath = doxyfilePath.trim();
-    	this.doxygenHtmlDirectory=doxygenHtmlDirectory;
-    	this.keepAll= keepAll;
+		@Override
+		public Publisher newInstance(StaplerRequest req) throws FormException {
+			Publisher p = new DoxygenArchiver(req
+					.getParameter("doxygen.publishType"), req
+					.getParameter("doxygen.doxyfilePath"), req
+					.getParameter("doxygen.doxygenHtmlDirectory"), req
+					.getParameter("doxygen.keepall") != null);
+			return p;
+		}
 
-    }
+		@Override
+		public String getHelpFile() {
+			return "/plugin/doxygen/help.html";
+		}
 
-    @Override
-    public boolean needsToRunAfterFinalized() {
-        return true;
-    }
+		public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+			return true;
+		}
+	}
 
-    @Override
-    public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-        return true;
-    }
-      
-    
-    /**
-     * Gets the directory where the Doxygen is stored for the given project.
-     */
-    private static File getDoxygenDir(AbstractItem project) {
-        return new File(project.getRootDir(),"doxygen/html");
-    }
+	@DataBoundConstructor
+	public DoxygenArchiver(final String publishType, final String doxyfilePath,
+			final String doxygenHtmlDirectory, boolean keepAll) {
+		this.publishType = publishType;
+		this.doxyfilePath = doxyfilePath.trim();
+		this.doxygenHtmlDirectory = doxygenHtmlDirectory;
+		this.keepAll = keepAll;
 
-    /**
-     * Gets the directory where the Doxygen is stored for the given build.
-     */
-    private static File getDoxygenDir(Run run) {
-        return new File(run.getRootDir(),"doxygen/html");
-    }    
+	}
 
-	
-    @SuppressWarnings("unchecked")
-    @Override
-    public boolean perform(AbstractBuild<?,?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
-    	    
-    	listener.getLogger().println("Publishing Doxygen HTML results.");
-    	
-    	try{
-    		DoxygenDirectoryParser parser = new DoxygenDirectoryParser(publishType, doxyfilePath,doxygenHtmlDirectory);
-    		FilePath doxygenGeneratedDir  = build.getProject().getWorkspace().act(parser);
-
-        	listener.getLogger().println("The determined Doxygen directory is '"+ doxygenGeneratedDir+"'.");
-
-            //Determine the future stored doxygen directory
-            FilePath target = new FilePath(keepAll ? getDoxygenDir(build) : getDoxygenDir(build.getProject()));    	
-
-
-            if (doxygenGeneratedDir.copyRecursiveTo("**/*",target)==0) {
-                if(build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
-                    // If the build failed, don't complain that there was no javadoc.
-                    // The build probably didn't even get to the point where it produces javadoc. 
-                }
-                
-                listener.getLogger().println("Failure to copy the generated doxygen html documentation at '" +doxygenHtmlDirectory + "' to '" + target + "'");
-                
-                build.setResult(Result.FAILURE);
-                return true;
-            }
-    		
-    		
-    		// add build action, if doxygen is recorded for each build
-            if(keepAll)                
-            	build.addAction(new DoxygenBuildAction(build));		
-            
-        } 
-    	catch (Exception e) {
-            e.printStackTrace(listener.fatalError("error"));
-            build.setResult(Result.FAILURE);
-            return true;
-        }
-        
-        listener.getLogger().println("End publishing Doxygen HTML results.");        
+	@Override
+	public boolean needsToRunAfterFinalized() {
 		return true;
 	}
 
+	@Override
+	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
+		return true;
+	}
 
+	/**
+	 * Gets the directory where the Doxygen is stored for the given project.
+	 */
+	private static File getDoxygenDir(AbstractItem project) {
+		return new File(project.getRootDir(), "doxygen/html");
+	}
 
+	/**
+	 * Gets the directory where the Doxygen is stored for the given build.
+	 */
+	private static File getDoxygenDir(Run run) {
+		return new File(run.getRootDir(), "doxygen/html");
+	}
 
-    public Descriptor<Publisher> getDescriptor() {
-        return DESCRIPTOR;
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
+			BuildListener listener) throws InterruptedException, IOException {
 
-    public Action getProjectAction(Project project) {
-        return new DoxygenAction(project);
-    }
+		if ((build.getResult().equals(Result.SUCCESS))
+				|| (build.getResult().equals(Result.UNSTABLE))) {
 
+			listener.getLogger().println("Publishing Doxygen HTML results.");
 
+			try {
+				DoxygenDirectoryParser parser = new DoxygenDirectoryParser(
+						publishType, doxyfilePath, doxygenHtmlDirectory);
+				FilePath doxygenGeneratedDir = build.getProject()
+						.getWorkspace().act(parser);
 
- 
-    protected static abstract class BaseDoxygenAction implements Action {
-        public String getUrlName() {
-            return "doxygen";
-        }
+				listener.getLogger().println(
+						"The determined Doxygen directory is '"
+								+ doxygenGeneratedDir + "'.");
 
-        public String getDisplayName() {
-        	return "DoxyGen HTML";
-        }
+				// Determine the future stored doxygen directory
+				FilePath target = new FilePath(keepAll ? getDoxygenDir(build)
+						: getDoxygenDir(build.getProject()));
 
-        public String getIconFileName() {
-            if(dir().exists())
-                return "help.gif";
-            else
-                // hide it since we don't have doxygen yet.
-                return null;
-        }
+				if (doxygenGeneratedDir.copyRecursiveTo("**/*", target) == 0) {
+					if (build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
+						// If the build failed, don't complain that there was no
+						// javadoc.
+						// The build probably didn't even get to the point where
+						// it produces javadoc.
+					}
 
-        public void doDynamic(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, InterruptedException {
-            new DirectoryBrowserSupport(this, getTitle())
-                .serveFile(req, rsp, new FilePath(dir()), "help.gif", false);
-        }
+					listener.getLogger().println(
+							"Failure to copy the generated doxygen html documentation at '"
+									+ doxygenHtmlDirectory + "' to '" + target
+									+ "'");
 
-        protected abstract String getTitle();
+					build.setResult(Result.FAILURE);
+					return true;
+				}
 
-        protected abstract File dir();
-    }
+				// add build action, if doxygen is recorded for each build
+				if (keepAll)
+					build.addAction(new DoxygenBuildAction(build));
 
-    public static class DoxygenAction extends BaseDoxygenAction implements ProminentProjectAction {
-        private final AbstractItem project;
+			} catch (Exception e) {
+				e.printStackTrace(listener.fatalError("error"));
+				build.setResult(Result.FAILURE);
+				return true;
+			}
 
-        public DoxygenAction(AbstractItem project) {
-            this.project = project;
-        }
+			listener.getLogger().println("End publishing Doxygen HTML results.");
+		}
+		else{
+			listener.getLogger().println("Build failed. Publishing Doxygen skipped.");
+		}
+		return true;
+	}
 
-        protected File dir() {
+	public Descriptor<Publisher> getDescriptor() {
+		return DESCRIPTOR;
+	}
 
-            if (project instanceof AbstractProject) {
-                AbstractProject abstractProject = (AbstractProject) project;
+	public Action getProjectAction(Project project) {
+		return new DoxygenAction(project);
+	}
 
-                Run run = abstractProject.getLastSuccessfulBuild();
-                if (run != null) {
-                    File doxygenDir = getDoxygenDir(run);
+	protected static abstract class BaseDoxygenAction implements Action {
+		public String getUrlName() {
+			return "doxygen";
+		}
 
-                    if (doxygenDir.exists())
-                        return doxygenDir;
-                }
-            }
+		public String getDisplayName() {
+			return "DoxyGen HTML";
+		}
 
-            return getDoxygenDir(project);
-        }
+		public String getIconFileName() {
+			if (dir().exists())
+				return "help.gif";
+			else
+				// hide it since we don't have doxygen yet.
+				return null;
+		}
 
-        protected String getTitle() {
-            return project.getDisplayName()+" doxygen";
-        }
-    }
-    
-    public static class DoxygenBuildAction extends BaseDoxygenAction {
-    	private final AbstractBuild<?,?> build;
-    	
-    	public DoxygenBuildAction(AbstractBuild<?,?> build) {
-    	    this.build = build;
-    	}
+		public void doDynamic(StaplerRequest req, StaplerResponse rsp)
+				throws IOException, ServletException, InterruptedException {
+			new DirectoryBrowserSupport(this, getTitle()).serveFile(req, rsp,
+					new FilePath(dir()), "help.gif", false);
+		}
 
-        protected String getTitle() {
-            return build.getDisplayName()+" doxygen/html";
-        }
+		protected abstract String getTitle();
 
-        protected File dir() {
-            return new File(build.getRootDir(),"doxygen/html");
-        }
-    }
-   
+		protected abstract File dir();
+	}
+
+	public static class DoxygenAction extends BaseDoxygenAction implements
+			ProminentProjectAction {
+		private final AbstractItem project;
+
+		public DoxygenAction(AbstractItem project) {
+			this.project = project;
+		}
+
+		protected File dir() {
+
+			if (project instanceof AbstractProject) {
+				AbstractProject abstractProject = (AbstractProject) project;
+
+				Run run = abstractProject.getLastSuccessfulBuild();
+				if (run != null) {
+					File doxygenDir = getDoxygenDir(run);
+
+					if (doxygenDir.exists())
+						return doxygenDir;
+				}
+			}
+
+			return getDoxygenDir(project);
+		}
+
+		protected String getTitle() {
+			return project.getDisplayName() + " doxygen";
+		}
+	}
+
+	public static class DoxygenBuildAction extends BaseDoxygenAction {
+		private final AbstractBuild<?, ?> build;
+
+		public DoxygenBuildAction(AbstractBuild<?, ?> build) {
+			this.build = build;
+		}
+
+		protected String getTitle() {
+			return build.getDisplayName() + " doxygen/html";
+		}
+
+		protected File dir() {
+			return new File(build.getRootDir(), "doxygen/html");
+		}
+	}
+
 }

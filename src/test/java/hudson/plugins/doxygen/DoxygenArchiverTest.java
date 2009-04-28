@@ -26,7 +26,7 @@ import org.junit.Test;
 
 public class DoxygenArchiverTest extends AbstractWorkspaceTest {
 
-    
+     
     private Mockery context;
     private Mockery classContext;
     private BuildListener taskListener;

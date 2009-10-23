@@ -1,5 +1,6 @@
 package hudson.plugins.doxygen;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -7,13 +8,13 @@ import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
-import hudson.model.Descriptor;
 import hudson.model.DirectoryBrowserSupport;
-import hudson.model.Project;
 import hudson.model.ProminentProjectAction;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.io.Serializable;
 
 import javax.servlet.ServletException;
 
+import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -30,10 +32,11 @@ import org.kohsuke.stapler.StaplerResponse;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Publisher implements Serializable {
+public class DoxygenArchiver extends Notifier implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	@Extension
 	public static final DoxygenArchiverDescriptor DESCRIPTOR = new DoxygenArchiverDescriptor();
 
 	/**
@@ -89,7 +92,7 @@ public class DoxygenArchiver extends Publisher implements Serializable {
 		}
 
 		@Override
-		public Publisher newInstance(StaplerRequest req) throws FormException {
+		public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
 			Publisher p = new DoxygenArchiver(req
 					.getParameter("doxygen.publishType"), req
 					.getParameter("doxygen.doxyfilePath"), req
@@ -155,8 +158,7 @@ public class DoxygenArchiver extends Publisher implements Serializable {
 			try {
 				DoxygenDirectoryParser parser = new DoxygenDirectoryParser(
 						publishType, doxyfilePath, doxygenHtmlDirectory);
-				FilePath doxygenGeneratedDir = build.getProject()
-						.getWorkspace().act(parser);
+				FilePath doxygenGeneratedDir = build.getWorkspace().act(parser);
 
 				listener.getLogger().println(
 						"The determined Doxygen directory is '"
@@ -201,11 +203,17 @@ public class DoxygenArchiver extends Publisher implements Serializable {
 		return true;
 	}
 
-	public Descriptor<Publisher> getDescriptor() {
+	public BuildStepMonitor getRequiredMonitorService() {
+		return BuildStepMonitor.STEP;
+	}
+
+	@Override
+	public DoxygenArchiverDescriptor getDescriptor() {
 		return DESCRIPTOR;
 	}
 
-	public Action getProjectAction(Project project) {
+	@Override
+	public Action getProjectAction(AbstractProject<?, ?> project) {
 		return new DoxygenAction(project);
 	}
 
@@ -226,10 +234,10 @@ public class DoxygenArchiver extends Publisher implements Serializable {
 				return null;
 		}
 
-		public void doDynamic(StaplerRequest req, StaplerResponse rsp)
+		public DirectoryBrowserSupport doDynamic(StaplerRequest req, StaplerResponse rsp)
 				throws IOException, ServletException, InterruptedException {
-			new DirectoryBrowserSupport(this, getTitle()).serveFile(req, rsp,
-					new FilePath(dir()), "help.gif", false);
+			return new DirectoryBrowserSupport(this, new FilePath(dir()), getTitle(),
+					                   "help.gif", false);
 		}
 
 		protected abstract String getTitle();

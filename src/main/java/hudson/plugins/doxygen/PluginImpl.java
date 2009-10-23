@@ -2,32 +2,21 @@ package hudson.plugins.doxygen;
 
 import java.io.IOException;
 
-import javax.servlet.ServletException;
-
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-
+import hudson.FilePath;
 import hudson.Plugin;
-import hudson.tasks.Publisher;
-import hudson.util.FormFieldValidator;
+import hudson.model.AbstractProject;
+import hudson.util.FormValidation;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * @author Gregory BOISSINOT
  */
 public class PluginImpl extends Plugin {
 
-
-    /**
-     * Registers Doxygen publisher.
-     */
-    @Override
-    public void start() throws Exception {
-        Publisher.PUBLISHERS.add(DoxygenArchiver.DESCRIPTOR);        
-        super.start();
-    }
-    
-    public void doCheckDoxygenFile(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-        new FormFieldValidator.WorkspaceFilePath(req,rsp, true, true).process();
+    public FormValidation doCheckDoxygenFile(@AncestorInPath AbstractProject project, @QueryParameter String value) throws IOException {
+        FilePath ws = project.getSomeWorkspace();
+        return ws!=null ? ws.validateFileMask(value, true) : FormValidation.ok();
     }     
 
 

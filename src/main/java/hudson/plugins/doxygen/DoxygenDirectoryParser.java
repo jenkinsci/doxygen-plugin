@@ -8,7 +8,6 @@ import hudson.remoting.VirtualChannel;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -136,7 +135,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
      * Load the Doxyfile Doxygen file in memory
      */
     private void loadDoxyFile(FilePath doxyfilePath) 
-    throws FileNotFoundException, IOException, InterruptedException{
+    throws  IOException, InterruptedException{
     
     	LOGGER.log(Level.INFO,"The Doxyfile path is '"+doxyfilePath.toURI()+"'.");
     	
@@ -151,33 +150,48 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 			doxyfileInfos=new HashMap<String, String>();
 		}
 		while ((line=br.readLine())!=null){
-			if (line.indexOf(separator)!=-1){
-				String[] elements = line.split(separator);
 
-				if (elements[0].startsWith("@INCLUDE_PATH")){
-					 Collections.addAll(doxyfileDirectories,(elements[1].split(" ")));
-				}
-				else if (elements[0].startsWith("@INCLUDE")){
-					processIncludeFile(doxyfileDirectories, doxyfilePath.getParent(), elements[1].trim());
-				}
-				else{
-					doxyfileInfos.put(elements[0].trim(), elements[1].trim());
-				}
+            if (doxyfileLineIsAComment(line)) {
+            	// Prevent that a comment containing a separator get's interpreted somehow
+            	continue;
+            }
+
+            String[] elements = line.split(separator);
+			if (elements.length == 1) {
+				// Either there is no separator in the line or there is nothing behind the separator (i.e. there's no value to the key)
+				continue;
 			}
+
+			if (elements[0].startsWith("@INCLUDE_PATH")){
+				Collections.addAll(doxyfileDirectories,(elements[1].split(" ")));
+			}
+
+			else if (elements[0].startsWith("@INCLUDE")){
+				processIncludeFile(doxyfileDirectories, doxyfilePath.getParent(), elements[1].trim());
+			}
+
+			else{
+				doxyfileInfos.put(elements[0].trim(), elements[1].trim());
+            }
+
 		}
 		br.close(); 
 		ipsr.close();
 		ips.close();
     }    
-	
-    
+	             
+
+    private boolean doxyfileLineIsAComment(String line) {
+		return line.trim().startsWith("#");
+	}
+
     private static boolean isAbsolute(String rel) {
         return rel.startsWith("/") || DRIVE_PATTERN.matcher(rel).matches();
     }
 
     
     private void processIncludeFileWithNoIncludedDirectories(FilePath parentFile, String includedFile) 
-    throws FileNotFoundException, IOException, InterruptedException{
+    throws IOException, InterruptedException{
     	
 		FilePath includedFilePath = isAbsolute(includedFile)?new FilePath(new File(includedFile)):new FilePath(parentFile,includedFile);		
     	if (!includedFilePath.exists()){
@@ -189,7 +203,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     }
 
     private void processIncludeFileWithIncludedDirectories(List<String> doxyfileDirectories,FilePath parentFile, String includedFile) 
-    throws FileNotFoundException, IOException, InterruptedException{
+    throws IOException, InterruptedException{
     	
 		FilePath includedFilePath = null;
     	boolean findIncludedFileInDirectories = false;
@@ -243,7 +257,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     
     
     private void processIncludeFile(List<String> doxyfileDirectories, FilePath parentFile, String includedFile) 
-    throws FileNotFoundException, IOException, InterruptedException{
+    throws IOException, InterruptedException{
 
     	//We haven't any @INCLUDE_PATH
     	if (doxyfileDirectories==null || doxyfileDirectories.isEmpty()){
@@ -260,7 +274,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
      * Retrieve the generated doxygen HTML directory from Doxyfile
      */
 	private FilePath retrieveDoxygenDirectoryFromDoxyfile(String doxyfilePath, FilePath base)
-	throws FileNotFoundException, IOException, InterruptedException {
+	throws IOException, InterruptedException {
 		
 		FilePath doxygenGeneratedDir;
 		

@@ -3,15 +3,31 @@
 	<parent>
 		<groupId>org.jvnet.hudson.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>1.319</version>
+		<version>1.336</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>doxygen</artifactId>
 	<packaging>hpi</packaging>
 	<name>Hudson Doxygen Plug-in</name>
-	<version>0.5-SNAPSHOT</version>
+	<version>0.4.1-SNAPSHOT</version>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/Doxygen+Plugin</url>
+
+    <licenses>
+       <license>
+          <name>MIT license</name>
+          <comments>All source code is under the MIT license.</comments>
+       </license>
+    </licenses>
+
+    <developers>
+       <developer>
+          <id>gbois</id>
+          <name>Gregory Boissinot</name>
+          <email>gregory.boissinot@gmail.com</email>
+          <timezone>+1</timezone>
+       </developer>
+    </developers>
 
 	<dependencies>
 		<dependency>

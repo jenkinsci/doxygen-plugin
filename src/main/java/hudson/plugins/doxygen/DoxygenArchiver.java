@@ -3,6 +3,7 @@ package hudson.plugins.doxygen;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.util.FormValidation;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
@@ -24,9 +25,7 @@ import java.io.Serializable;
 import javax.servlet.ServletException;
 
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.*;
 
 /**
  * 
@@ -52,12 +51,12 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 	/**
 	 * The publishing type : with the doxyfile or directly the html directory
 	 */
-	private final String publishType;
+	private  String publishType;
 
 	/**
 	 * The doxygen html directory
 	 */
-	private final String doxygenHtmlDirectory;
+	private  String doxygenHtmlDirectory;
 
 	public String getDoxyfilePath() {
 		return doxyfilePath;
@@ -93,13 +92,13 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 
 		@Override
 		public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-			Publisher p = new DoxygenArchiver(req
-					.getParameter("doxygen.publishType"), req
-					.getParameter("doxygen.doxyfilePath"), req
-					.getParameter("doxygen.doxygenHtmlDirectory"), req
-					.getParameter("doxygen.keepall") != null);
-			return p;
+			return req.bindJSON(DoxygenArchiver.class, formData);
 		}
+        
+        public FormValidation doCheckDoxyfilePath(@AncestorInPath AbstractProject project, @QueryParameter String value) throws IOException {
+            FilePath ws = project.getSomeWorkspace();
+            return ws!=null ? ws.validateFileMask(value, true) : FormValidation.ok();
+        }
 
 		@Override
 		public String getHelpFile() {
@@ -112,14 +111,11 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 	}
 
 	@DataBoundConstructor
-	public DoxygenArchiver(final String publishType, final String doxyfilePath,
-			final String doxygenHtmlDirectory, boolean keepAll) {
-		this.publishType = publishType;
+	public DoxygenArchiver(String doxyfilePath, boolean keepAll) {
 		this.doxyfilePath = doxyfilePath.trim();
-		this.doxygenHtmlDirectory = doxygenHtmlDirectory;
 		this.keepAll = keepAll;
-
 	}
+
 
 	@Override
 	public boolean needsToRunAfterFinalized() {

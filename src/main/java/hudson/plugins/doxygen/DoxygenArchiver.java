@@ -50,13 +50,13 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 
 	/**
 	 * The publishing type : with the doxyfile or directly the html directory
-	 */
-	private  String publishType;
+	 */ 
+	private transient String publishType;
 
 	/**
 	 * The doxygen html directory
 	 */
-	private  String doxygenHtmlDirectory;
+	private transient String doxygenHtmlDirectory;
 
 	public String getDoxyfilePath() {
 		return doxyfilePath;
@@ -66,10 +66,12 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 		return keepAll;
 	}
 
+    @Deprecated
 	public String getPublishType() {
 		return publishType;
 	}
 
+    @Deprecated
 	public String getDoxygenHtmlDirectory() {
 		return doxygenHtmlDirectory;
 	}

@@ -10,7 +10,7 @@
 	<artifactId>doxygen</artifactId>
 	<packaging>hpi</packaging>
 	<name>Hudson Doxygen Plug-in</name>
-	<version>0.4.1-SNAPSHOT</version>
+	<version>0.5-SNAPSHOT</version>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/Doxygen+Plugin</url>
 
     <licenses>

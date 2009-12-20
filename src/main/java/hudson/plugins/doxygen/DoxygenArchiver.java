@@ -230,11 +230,13 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 				return null;
 		}
 
-		public DirectoryBrowserSupport doDynamic(StaplerRequest req, StaplerResponse rsp)
-				throws IOException, ServletException, InterruptedException {
-			return new DirectoryBrowserSupport(this, new FilePath(dir()), getTitle(),
-					                   "help.gif", false);
-		}
+
+        public void doDynamic(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
+            DirectoryBrowserSupport dbs = new DirectoryBrowserSupport(this, new FilePath(this.dir()), this.getTitle(), "graph.gif", false);
+            dbs.generateResponse(req, rsp, this);
+        }
+        
+
 
 		protected abstract String getTitle();
 

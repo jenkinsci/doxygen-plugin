@@ -3,6 +3,7 @@ package hudson.plugins.doxygen;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.tasks.*;
 import hudson.util.FormValidation;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
@@ -13,10 +14,6 @@ import hudson.model.DirectoryBrowserSupport;
 import hudson.model.ProminentProjectAction;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Notifier;
-import hudson.tasks.Publisher;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +28,7 @@ import org.kohsuke.stapler.*;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Notifier implements Serializable {
+public class DoxygenArchiver extends Recorder implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -116,12 +113,6 @@ public class DoxygenArchiver extends Notifier implements Serializable {
 	public DoxygenArchiver(String doxyfilePath, boolean keepAll) {
 		this.doxyfilePath = doxyfilePath.trim();
 		this.keepAll = keepAll;
-	}
-
-
-	@Override
-	public boolean needsToRunAfterFinalized() {
-		return true;
 	}
 
 	@Override

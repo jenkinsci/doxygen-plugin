@@ -1,19 +1,17 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-    <f:nested>
-    <table>
-      <f:entry title="Doxyfile path" help="/plugin/doxygen/DoxygenArchiver/doxyfilePath.html">
-        <f:textbox field="doxyfilePath"  />
-      </f:entry>
-    </table>
-    </f:nested>
+    <f:entry title="Doxyfile path" help="/plugin/doxygen/DoxygenArchiver/doxyfilePath.html">
+        <f:textbox field="doxyfilePath"/>
+    </f:entry>
+
 
     <f:block>
-      <f:entry help="/plugin/doxygen/DoxygenArchiver/keepall.html">
-        <f:checkbox field="keepAll" />
-        <label class="attach-previous">Retain doxygen generation for each successful build</label>
-        <label/>
-      </f:entry>
+        <f:entry help="/plugin/doxygen/DoxygenArchiver/keepall.html">
+            <f:checkbox field="keepAll"/>
+            <label class="attach-previous">Retain doxygen generation for each successful build</label>
+            <label/>
+        </f:entry>
     </f:block>
-       	 
+
 </j:jelly>

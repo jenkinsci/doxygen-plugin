@@ -43,11 +43,20 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     private String publishType;
     private String doxygenHtmlDirectory;
     private String doxyfilePath;
+    private String folderWhereYouRunDoxygen;
     
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory){
     	this.publishType=publishType;
     	this.doxyfilePath=doxyfilePath;
     	this.doxygenHtmlDirectory=doxygenHtmlDirectory;
+    	this.folderWhereYouRunDoxygen = null;
+    }
+    
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory,String folderWhereYouRunDoxygen){
+    	this.publishType=publishType;
+    	this.doxyfilePath=doxyfilePath;
+    	this.doxygenHtmlDirectory=doxygenHtmlDirectory;
+    	this.folderWhereYouRunDoxygen = folderWhereYouRunDoxygen;
     }
     
     public FilePath invoke(java.io.File workspace, VirtualChannel channel) throws IOException {
@@ -115,7 +124,14 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     	String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);    	
     	String doxyGenDir = null;
     	if (outputDirectory!= null && outputDirectory.trim().length() != 0){
-    		doxyGenDir = outputDirectory;    		
+    		
+    		// Check if need to append the path from where doxygen is run 
+    		if ((null != this.folderWhereYouRunDoxygen) && (!this.folderWhereYouRunDoxygen.isEmpty())){
+    			doxyGenDir = this.folderWhereYouRunDoxygen + File.separator + outputDirectory;
+    		}else{
+    			doxyGenDir = outputDirectory;
+    		}
+    		    		
     	}
     	
     	String outputHTML      = doxyfileInfos.get(DOXYGEN_KEY_HTML_OUTPUT);
@@ -124,7 +140,12 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     		LOGGER.log(Level.INFO,"The "+DOXYGEN_KEY_HTML_OUTPUT+" tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT+ " will be used as the default path.");
     	}
     	else {
-    		doxyGenDir = (doxyGenDir!=null)?(doxyGenDir+ File.separator + outputHTML):outputHTML;
+    		// Check if folderWhereYouRunDoxygen is specified, because then the gen dir is calculated relative to it 
+    		if ((null != this.folderWhereYouRunDoxygen) && (!this.folderWhereYouRunDoxygen.isEmpty())){
+    			doxyGenDir = (folderWhereYouRunDoxygen+ File.separator + outputHTML);
+    		}else{
+    			doxyGenDir = (doxyGenDir!=null)?(doxyGenDir+ File.separator + outputHTML):outputHTML;
+    		}
     		return new FilePath(base, doxyGenDir);
     	}    	
     	
@@ -287,7 +308,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 		if (isDoxygenGenerateHtml()){
 			
 			//Retrieve the generated doxygen directory from the build
-			doxygenGeneratedDir = getDoxygenGeneratedDir(base);                
+			doxygenGeneratedDir = getDoxygenGeneratedDir(base);     
+			LOGGER.log(Level.INFO,"Selected Directory path is " + doxygenGeneratedDir);
 			if (!doxygenGeneratedDir.exists()){
 		        throw new AbortException("The directory '"+ doxygenGeneratedDir + "' doesn't exist.");
 			}

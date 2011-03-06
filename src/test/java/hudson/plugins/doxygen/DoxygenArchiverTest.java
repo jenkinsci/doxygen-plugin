@@ -23,7 +23,7 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
+ 
 public class DoxygenArchiverTest extends AbstractWorkspaceTest {
 
      

@@ -5,20 +5,18 @@
         <f:textbox field="doxyfilePath"/>
     </f:entry>
    
-   <j:if test="${descriptor.isMatrixProject(it)}">  
-   	   <j:set var="dep" value="${app.labels}"/>  
-	   <f:entry title="${%Node}" help="/plugin/doxygen/DoxygenArchiver/slaves.html">
-	    <select class="setting-input"  name="runOnChild">
-	      <j:forEach var="s" items="${app.labels}">
-	        <j:if test="${s.isAssignable()}">
-	          <f:option selected="${s.name==instance.runOnChild}" value="${s.name}"
-	            >${s.name} <j:if test="${!empty(s.description)}">(${s.description})</j:if></f:option>
-	        </j:if>
-	      </j:forEach>
-	    </select>
-	  </f:entry>
-  </j:if>
-         
+    <j:if test="${descriptor.isMatrixProject(it)}">
+        <j:set var="dep" value="${app.labels}"/>
+        <f:entry title="${%Node}" help="/plugin/doxygen/DoxygenArchiver/slaves.html">
+        <select class="setting-input"  name="runOnChild">
+            <j:forEach var="s" items="${app.labels}">
+                <j:if test="${s.isAssignable()}">
+                    <f:option selected="${s.name==instance.runOnChild}" value="${s.name}">${s.name} <j:if test="${!empty(s.description)}">(${s.description})</j:if></f:option>
+                </j:if>
+            </j:forEach>
+        </select>
+        </f:entry>
+    </j:if>
 
     <f:block>
         <f:entry help="/plugin/doxygen/DoxygenArchiver/keepall.html">
@@ -29,10 +27,9 @@
     </f:block>
     
     <f:advanced>
-    <f:entry title="${%FolderWhereYouRunDoxygen}" help="/plugin/doxygen/DoxygenArchiver/FolderWhereYouRunDoxygen.html">
-      <f:textbox field="folderWhereYouRunDoxygen"/>
-    </f:entry>    
-  	</f:advanced>
-  
+        <f:entry title="${%FolderWhereYouRunDoxygen}" help="/plugin/doxygen/DoxygenArchiver/FolderWhereYouRunDoxygen.html">
+            <f:textbox field="folderWhereYouRunDoxygen"/>
+        </f:entry>
+    </f:advanced>
 
 </j:jelly>

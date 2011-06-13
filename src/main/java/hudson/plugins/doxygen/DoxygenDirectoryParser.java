@@ -324,21 +324,12 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             //Retrieve the generated doxygen directory from the build
             doxygenGeneratedDir = getDoxygenGeneratedDir(base);
 
-            base.act(new FilePath.FileCallable<FilePath>() {
-
-                public FilePath invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-            });
-
-
-            LOGGER.log(Level.INFO, "Selected Directory path is " + doxygenGeneratedDir);
-            if (!doxygenGeneratedDir.exists()) {
-                throw new AbortException("The directory '" + doxygenGeneratedDir + "' doesn't exist.");
+            if (doxygenGeneratedDir == null || !doxygenGeneratedDir.exists()) {
+                throw new AbortException("The output directory doesn't exist.");
             }
         } else {
             //The GENERATE_HTML tag is not set to 'YES'
-            throw new AbortException("The tag " + DOXYGEN_KEY_GENERATE_HTML + " is not set to '" + DOXYGEN_VALUE_YES + "'. The Doxygen plugin publishes only HTML documentations.");
+            throw new AbortException("The tag " + DOXYGEN_KEY_GENERATE_HTML + " is not set to '" + DOXYGEN_VALUE_YES + "'. The Doxygen plugin publishes only HTML documentation.");
         }
 
         return doxygenGeneratedDir;

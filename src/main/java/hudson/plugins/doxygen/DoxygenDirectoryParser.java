@@ -147,13 +147,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         }
 
         final String finalComputedDoxygenDir = doxyGenDir.replace('\\', '/');
-
-        Boolean absolute = false;
-        absolute = base.act(new FilePath.FileCallable<Boolean>() {
-            public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-                return new File(finalComputedDoxygenDir).getParentFile().exists();
-            }
-        });
+        Boolean absolute = isDirectoryAbsolute(base, finalComputedDoxygenDir);
 
         FilePath result;
         if (absolute) {
@@ -169,6 +163,27 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
         return result;
     }
+
+	protected Boolean isDirectoryAbsolute(FilePath base,
+			final String finalComputedDoxygenDir) throws IOException,
+			InterruptedException {
+		Boolean absolute = false;
+		absolute = base.act(new FilePath.FileCallable<Boolean>() {
+			public Boolean invoke(File f, VirtualChannel channel)
+					throws IOException, InterruptedException {
+				
+				File parentFile = new File(finalComputedDoxygenDir).getParentFile();
+				if (parentFile == null) {
+					// A computed directory with no parent will return null.
+					// Guard against a NullPointerException
+					return false;
+				}
+				
+				return parentFile.exists();
+			}
+		});
+		return absolute;
+	}
 
     /**
      * Load the Doxyfile Doxygen file in memory

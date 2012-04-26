@@ -49,7 +49,6 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     }
 
     public FilePath invoke(java.io.File workspace, VirtualChannel channel) throws IOException {
-
         try {
             return (DoxygenArchiverDescriptor.DOXYGEN_HTMLDIRECTORY_PUBLISHTYPE).equals(publishType)
                     ? retrieveDoxygenDirectoryFromHudsonConfiguration(doxygenHtmlDirectory, new FilePath(workspace))
@@ -148,42 +147,54 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
         final String finalComputedDoxygenDir = doxyGenDir.replace('\\', '/');
         Boolean absolute = isDirectoryAbsolute(base, finalComputedDoxygenDir);
-
+        LOGGER.info("Directory is absolute:"+absolute);
+        
         FilePath result;
         if (absolute) {
-            result = new FilePath(base.getChannel(), finalComputedDoxygenDir);
+            LOGGER.info("Creating FilePath using base.getChannel()");
+            result = new FilePath(base.getChannel(), finalComputedDoxygenDir);            
         } else {
+            LOGGER.info("Creating FilePath using base");
             result = new FilePath(base, doxyGenDir);
         }
 
-
+        LOGGER.info("Created filepath with the following path:"+result.getRemote());
         if (!result.exists()) {
+            LOGGER.info("Computed doxygen generated dir does not exist. Returning null");
             return null;
         }
 
         return result;
     }
 
-	protected Boolean isDirectoryAbsolute(FilePath base,
-			final String finalComputedDoxygenDir) throws IOException,
-			InterruptedException {
-		Boolean absolute = false;
-		absolute = base.act(new FilePath.FileCallable<Boolean>() {
-			public Boolean invoke(File f, VirtualChannel channel)
-					throws IOException, InterruptedException {
-				
-				File parentFile = new File(finalComputedDoxygenDir).getParentFile();
-				if (parentFile == null) {
-					// A computed directory with no parent will return null.
-					// Guard against a NullPointerException
-					return false;
-				}
-				
-				return parentFile.exists();
-			}
-		});
-		return absolute;
-	}
+    // See https://issues.jenkins-ci.org/browse/JENKINS-13599
+    protected boolean isDirectoryAbsolute(String path) {
+        File file = new File(path);
+        String absolutePath = file.getAbsolutePath();
+        LOGGER.info(String.format("passed in path:%s, absolutePath:%s", 
+                path, absolutePath));
+        if(path.equals(file.getAbsolutePath())) {
+            return true;
+        }
+        else {
+            return false;
+        }    
+    }
+    
+    protected Boolean isDirectoryAbsolute(FilePath base,
+                                          final String finalComputedDoxygenDir) throws IOException,
+        InterruptedException {
+        Boolean absolute = false;
+        absolute = base.act(new FilePath.FileCallable<Boolean>() {
+                public Boolean invoke(File f, VirtualChannel channel)
+                throws IOException, InterruptedException {
+                    
+                    // See https://issues.jenkins-ci.org/browse/JENKINS-13599
+                    return isDirectoryAbsolute(finalComputedDoxygenDir);
+                }
+            });
+        return absolute;
+    }
 
     /**
      * Load the Doxyfile Doxygen file in memory

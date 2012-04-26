@@ -10,7 +10,7 @@
     <artifactId>doxygen</artifactId>
     <packaging>hpi</packaging>
     <name>Jenkins Doxygen Plug-in</name>
-    <version>0.11-SNAPSHOT</version>
+    <version>0.11</version>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Doxygen+Plugin</url>
 
     <licenses>

@@ -147,16 +147,20 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
         final String finalComputedDoxygenDir = doxyGenDir.replace('\\', '/');
         Boolean absolute = isDirectoryAbsolute(base, finalComputedDoxygenDir);
-
+        LOGGER.info("Directory is absolute:"+absolute);
+        
         FilePath result;
         if (absolute) {
-            result = new FilePath(base.getChannel(), finalComputedDoxygenDir);
+            LOGGER.info("Creating FilePath using base.getChannel()");
+            result = new FilePath(base.getChannel(), finalComputedDoxygenDir);            
         } else {
+            LOGGER.info("Creating FilePath using base");
             result = new FilePath(base, doxyGenDir);
         }
 
-
+        LOGGER.info("Created filepath with the following path:"+result.getRemote());
         if (!result.exists()) {
+            LOGGER.info("Computed doxygen generated dir does not exist. Returning null");
             return null;
         }
 

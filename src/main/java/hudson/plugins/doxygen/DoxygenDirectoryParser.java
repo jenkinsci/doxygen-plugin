@@ -136,14 +136,10 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         if (outputHTML == null || outputHTML.trim().length() == 0) {
             outputHTML = "html";
             LOGGER.log(Level.INFO, "The " + DOXYGEN_KEY_HTML_OUTPUT + " tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT + " will be used as the default path.");
-        } else {
-            // Check if folderWhereYouRunDoxygen is specified, because then the gen dir is calculated relative to it
-            if ((this.folderWhereYouRunDoxygen != null) && (!this.folderWhereYouRunDoxygen.isEmpty())) {
-                doxyGenDir = (folderWhereYouRunDoxygen + File.separator + outputHTML);
-            } else {
-                doxyGenDir = (doxyGenDir != null) ? (doxyGenDir + File.separator + outputHTML) : outputHTML;
-            }
         }
+        doxyGenDir = (doxyGenDir != null) ? (doxyGenDir + File.separator + outputHTML) : 
+                (this.folderWhereYouRunDoxygen != null) && (!this.folderWhereYouRunDoxygen.isEmpty()) ?
+                    (this.folderWhereYouRunDoxygen + File.separator + outputHTML) : outputHTML;
 
         final String finalComputedDoxygenDir = doxyGenDir.replace('\\', '/');
         Boolean absolute = isDirectoryAbsolute(base, finalComputedDoxygenDir);

@@ -229,16 +229,4 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
         context.assertIsSatisfied();
     }    
     
-    @Test
-    public void pathIsRelativeWhenNoParent() throws Exception {
-    	// Arrange
-    	DoxygenDirectoryParser parser = new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_DOXYFILE_PUBLISHTYPE, "Doxyfile", "");
-    	
-    	// Act
-    	// A final computed directory like "html" has no parent.
-    	Boolean absolute = parser.isDirectoryAbsolute(workspace, "html");
-    	
-    	// Assert
-    	Assert.assertFalse("When no parent is in the path, it is not absolute.", absolute);
-    }
 }

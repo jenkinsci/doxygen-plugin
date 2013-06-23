@@ -134,35 +134,6 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         return result;
     }
 
-    // See https://issues.jenkins-ci.org/browse/JENKINS-13599
-    protected boolean isDirectoryAbsolute(String path) {
-        File file = new File(path);
-        String absolutePath = file.getAbsolutePath();
-        LOGGER.info(String.format("passed in path:%s, absolutePath:%s", 
-                path, absolutePath));
-        if(path.equals(file.getAbsolutePath())) {
-            return true;
-        }
-        else {
-            return false;
-        }    
-    }
-    
-    protected Boolean isDirectoryAbsolute(FilePath base,
-                                          final String finalComputedDoxygenDir) throws IOException,
-        InterruptedException {
-        Boolean absolute = false;
-        absolute = base.act(new FilePath.FileCallable<Boolean>() {
-                public Boolean invoke(File f, VirtualChannel channel)
-                throws IOException, InterruptedException {
-                    
-                    // See https://issues.jenkins-ci.org/browse/JENKINS-13599
-                    return isDirectoryAbsolute(finalComputedDoxygenDir);
-                }
-            });
-        return absolute;
-    }
-
     /**
      * Load the Doxyfile Doxygen file in memory
      */

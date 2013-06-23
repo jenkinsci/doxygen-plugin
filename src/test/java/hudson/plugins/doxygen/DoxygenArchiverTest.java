@@ -227,6 +227,44 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
         
         classContext.assertIsSatisfied();
         context.assertIsSatisfied();
-    }    
-    
+    }
+
+
+    @Test
+    public void retrieveDoxygenFromLoadFileWithWhereRunDot() throws Exception {
+        	
+        String whereRun = "testWhereRun";
+
+    	//Create the doxyfile with content in the temporary workspace
+    	FilePath doxyfileDir = new FilePath(workspace,whereRun);
+    	FilePath doxyfilePath = doxyfileDir.child("Doxyfile-dot");
+    	doxyfileDir.mkdirs();
+    	FileOutputStream fos = new FileOutputStream(new File(doxyfilePath.toURI()));
+    	fos.write(readAsString("Doxyfile-dot").getBytes());
+    	fos.close();
+    	
+    	//Create the generated doxygen directory
+    	String commandDoxygenGeneratedDirectoryName="html";
+    	FilePath doxygenDir=new FilePath(doxyfileDir,commandDoxygenGeneratedDirectoryName);
+    	doxygenDir.mkdirs();
+    	
+    	
+    	DoxygenDirectoryParser doxygenDirectoryParser =     		
+    		new DoxygenDirectoryParser(DoxygenArchiverDescriptor.DOXYGEN_DOXYFILE_PUBLISHTYPE ,doxyfilePath.toString(),"",whereRun);
+    	
+        classContext.checking(new Expectations() {
+            {
+                ignoring(taskListener).getLogger();
+                will(returnValue(new PrintStream(new ByteArrayOutputStream())));                
+            }
+        });
+                   
+        FilePath resultDoxygenDirectory = doxygenDirectoryParser.invoke(parentFile, virtualChannel);
+        assertEquals("The computed doxygen directory is not correct", doxygenDir.toURI(),resultDoxygenDirectory.toURI()); 
+        
+        
+        classContext.assertIsSatisfied();
+        context.assertIsSatisfied();
+    }
+
 }

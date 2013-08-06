@@ -185,7 +185,11 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
                     rhs.add("");
                 }
                 if (elements[0].startsWith("@INCLUDE")) {
-                    processIncludeFile(doxyfileDirectories, doxyfilePath.getParent(), rhs.get(0));
+                    FilePath parentFile = doxyfilePath.getParent();
+                    if (doxyfilePath.getName().equals(rhs.get(0))) {
+                        parentFile = null;
+                    }
+                    processIncludeFile(doxyfileDirectories, parentFile, rhs.get(0));
                 }
                 else {
                     doxyfileInfos.put(elements[0].trim(), rhs.get(0));
@@ -234,7 +238,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         }
 
         // else, test if the included doxygen file is at the parent root
-        if ((includedFilePath = new FilePath(parentFile, includedFile)).exists()) {
+        if (parentFile != null && (includedFilePath = new FilePath(parentFile, includedFile)).exists()) {
             //Call again loadDoxyFile with the the included doxygen file path
             loadDoxyFile(includedFilePath);
             return;

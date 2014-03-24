@@ -179,7 +179,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 	}
 
 	
-	private boolean _perform(AbstractBuild<?, ?> build, Launcher launcher,BuildListener listener){
+	private boolean _perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener){
 		
 		if ((build.getResult().equals(Result.SUCCESS))
 				|| (build.getResult().equals(Result.UNSTABLE))) {
@@ -188,7 +188,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 
 			try {
 				DoxygenDirectoryParser parser = new DoxygenDirectoryParser(
-						publishType, doxyfilePath, doxygenHtmlDirectory,folderWhereYouRunDoxygen);
+						publishType, doxyfilePath, doxygenHtmlDirectory,folderWhereYouRunDoxygen, listener);
 				
 				
 				
@@ -206,7 +206,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 						// Check if this run runs on the node that is assigned this label 
 						if (run.getBuiltOn().getAssignedLabels().contains(childLabel)){														
 							doxygenGeneratedDir = run.getWorkspace().act(parser);
-							LOGGER.log(Level.INFO,"Selected node is " + run.getBuiltOn().getDisplayName());
+                            listener.getLogger().println("Selected node is " + run.getBuiltOn().getDisplayName());
 							break;
 						}
 					} 	
@@ -221,8 +221,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 
 
 				listener.getLogger().println(
-						"The determined Doxygen directory is '"
-								+ doxygenGeneratedDir + "'.");
+						"The determined Doxygen directory is '" + doxygenGeneratedDir + "'.");
 
 				// Determine the future stored doxygen directory
 				FilePath target = new FilePath(keepAll ? getDoxygenDir(build)

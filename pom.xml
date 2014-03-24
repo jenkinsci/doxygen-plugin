@@ -1,10 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.410</version>
+        <version>1.447</version>
     </parent>
 
     <artifactId>doxygen</artifactId>
@@ -12,6 +13,12 @@
     <name>Jenkins Doxygen Plug-in</name>
     <version>0.15-SNAPSHOT</version>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Doxygen+Plugin</url>
+
+    <properties>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
+        <project.buuld.sourceEncoding>UTF-8</project.buuld.sourceEncoding>
+    </properties>
 
     <licenses>
         <license>
@@ -37,13 +44,19 @@
         <dependency>
             <groupId>org.jmock</groupId>
             <artifactId>jmock-junit4</artifactId>
-            <version>2.2.0</version>
+            <version>2.6.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jmock</groupId>
             <artifactId>jmock-legacy</artifactId>
-            <version>2.2.0</version>
+            <version>2.6.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -61,6 +74,6 @@
             <url>http://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
-    
+
 </project>  
 

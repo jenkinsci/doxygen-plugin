@@ -10,7 +10,7 @@
     <artifactId>doxygen</artifactId>
     <packaging>hpi</packaging>
     <name>Jenkins Doxygen Plug-in</name>
-    <version>0.16</version>
+    <version>0.17-SNAPSHOT</version>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Doxygen+Plugin</url>
 
     <properties>
@@ -37,7 +37,7 @@
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/doxygen-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/doxygen-plugin.git</developerConnection>
-      <tag>doxygen-0.16</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <dependencies>

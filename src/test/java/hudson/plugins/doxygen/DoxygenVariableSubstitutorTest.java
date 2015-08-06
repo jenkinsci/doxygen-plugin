@@ -3,6 +3,8 @@ package hudson.plugins.doxygen;
 import static org.junit.Assert.assertEquals;
 
 
+import hudson.EnvVars;
+
 import org.junit.Test;
 
 
@@ -21,7 +23,15 @@ public class DoxygenVariableSubstitutorTest {
 		 * TEST_DOXY_C		/another/pathC
 		 * TEST_DOXY_D		/another/pathD
 		 */
-		DoxygenVariableSubstitutor s = new DoxygenVariableSubstitutor();
+		EnvVars environment = new EnvVars();
+		
+		environment.addLine("TEST_DOXY_SUBS=/my/doxygen/path");
+		environment.addLine("TEST_DOXY_A=/another/pathA");
+		environment.addLine("TEST_DOXY_B=/another/pathB");
+		environment.addLine("TEST_DOXY_C=/another/pathC");
+		environment.addLine("TEST_DOXY_D=/another/pathD");
+		
+		DoxygenVariableSubstitutor s = new DoxygenVariableSubstitutor(environment);
 			
 		assertEquals("nothing to see here", s.substitute("nothing to see here"));
 		

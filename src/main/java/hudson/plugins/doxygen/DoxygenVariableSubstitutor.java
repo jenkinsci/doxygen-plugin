@@ -1,6 +1,9 @@
 package hudson.plugins.doxygen;
 
+import hudson.EnvVars;
+
 import java.util.ArrayList;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,8 +22,15 @@ public class DoxygenVariableSubstitutor {
 	// Evaluates "$(varname)" including any white space, putting "$" and "varname"
 	// in capturing groups 1 and 2, respectively.
 	private static final Pattern DOXY_VAR_PATTERN = Pattern.compile("(\\$)\\s*\\(\\s*(\\w+)\\s*\\)");
-
 	
+    private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
+
+
+	private EnvVars environment;
+	
+	public DoxygenVariableSubstitutor(EnvVars environment) {
+		this.environment = environment;
+	}
 	/**
 	 * Substitutes a Doxygen variable.
 	 * @param doxyVar The variable to which to apply the substitution
@@ -29,16 +39,21 @@ public class DoxygenVariableSubstitutor {
 	public String substitute(String doxyVar) {
 		
 		String[] keys = extractKeys(doxyVar);
-		
 		String subst = doxyVar;
 		
-		String sysEnv = "";
+		String val = "";
 		
 		for(int i = 0; i < keys.length; i++) {
 			
-			sysEnv = System.getenv(keys[i]);
-			if(sysEnv != null)
-				subst = subst.replaceFirst(DOXY_VAR_PATTERN.toString(), sysEnv);
+			if(environment != null) {
+				
+				
+				val = environment.expand(keys[i]);
+				LOGGER.info("Expanding key: " + keys[i] + " to value:" + val);
+			
+				if(val != null)
+					subst = subst.replaceFirst(DOXY_VAR_PATTERN.toString(), val);
+			}
 		}
 		
 		return subst;
@@ -54,7 +69,7 @@ public class DoxygenVariableSubstitutor {
 			
 			while(regexMatcher.find()) {
 				
-				keys.add(regexMatcher.group(2));
+				keys.add(regexMatcher.group(1) + regexMatcher.group(2));
 			}
 			
 		} catch(Exception e) {

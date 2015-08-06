@@ -1,7 +1,9 @@
 package hudson.plugins.doxygen;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
+import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.plugins.doxygen.DoxygenArchiver.DoxygenArchiverDescriptor;
 import hudson.remoting.VirtualChannel;
@@ -22,7 +24,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
     private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
 
-    private static final DoxygenVariableSubstitutor SUBSTITUTOR = new DoxygenVariableSubstitutor();
+    private DoxygenVariableSubstitutor substitutor;
 
     private transient Map<String, String> doxyfileInfos = new HashMap<String, String>();
 
@@ -40,22 +42,36 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     private TaskListener listener;
 
     @Deprecated
-    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) {
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) throws IOException {
         this(publishType, doxyfilePath, doxygenHtmlDirectory, null);
     }
 
     @Deprecated
-    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen) {
-        this(publishType, doxyfilePath, doxygenHtmlDirectory, folderWhereYouRunDoxygen, TaskListener.NULL);
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen)  throws IOException {
+        this(publishType, doxyfilePath, doxygenHtmlDirectory, folderWhereYouRunDoxygen, null, TaskListener.NULL) ;
     }
 
-    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, TaskListener listener) {
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, 
+    		EnvVars environment, TaskListener listener) throws IOException {
         this.publishType = publishType;
         this.doxyfilePath = doxyfilePath;
         this.doxygenHtmlDirectory = doxygenHtmlDirectory;
         this.folderWhereYouRunDoxygen = folderWhereYouRunDoxygen;
         this.listener = listener;
+        
+        substitutor = new DoxygenVariableSubstitutor(environment);
+        
+        if(environment != null) {
+        	LOGGER.info("env-DOXY_OUTPUT_DIRECTORY=" + environment.expand("DOXY_OUTPUT_DIRECTORY"));
+        	LOGGER.info("env-$DOXY_OUTPUT_DIRECTORY=" + environment.expand("$DOXY_OUTPUT_DIRECTORY"));
+        	LOGGER.info("env-JOB_NAME=" + environment.expand("JOB_NAME"));
+        	LOGGER.info("env-$JOB_NAME=" + environment.expand("$JOB_NAME"));
+        } else {
+        	LOGGER.info("NO ENVIRONMENT");
+        }
+
     }
+
 
     public FilePath invoke(java.io.File workspace, VirtualChannel channel) throws IOException {
         try {
@@ -123,12 +139,15 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         }
         final String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
         if ((outputDirectory != null) && (!outputDirectory.trim().isEmpty())) {
+ 
+        	LOGGER.info("outputDirectory="  + outputDirectory);
+       		String substOutputDirectory = substitutor.substitute(outputDirectory);
+        	LOGGER.info("substOutputDirectory="  + substOutputDirectory);
         	
-        	String substOutputDirectory = SUBSTITUTOR.substitute(outputDirectory);
+    		if(substOutputDirectory != null) {
+    			result = result.child(substOutputDirectory);
+    		}
         	
-        	if(substOutputDirectory != null) {
-        		result = result.child(substOutputDirectory);
-        	}
         }
 
         //Concat html directory
@@ -137,9 +156,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             outputHTML = DOXYGEN_DEFAULT_HTML_OUTPUT;
             listener.getLogger().println( "The " + DOXYGEN_KEY_HTML_OUTPUT + " tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT + " will be used as the default path.");
         }
-        
-        String substOutputHTML = SUBSTITUTOR.substitute(outputHTML);
-       
+
+        String substOutputHTML = substitutor.substitute(outputHTML);
         result = result.child(substOutputHTML);
 
         LOGGER.info("Created filepath with the following path:"+result.getRemote());
@@ -187,6 +205,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             Matcher m = Pattern.compile("((?:[^\"]\\S*)|\"(?:.*?[^\\\\])\")\\s*").matcher(elements[1].trim());
             while (m.find())
             {
+            	LOGGER.info("Grabbed: " + m.group(1));
+            	
                 // Replace delimiting quotes and escaped quotes
                 String s = m.group(1).replace("\\\"", "\"").replaceAll("^\"(.*)\"$", "$1");
                 // Discard continuation character

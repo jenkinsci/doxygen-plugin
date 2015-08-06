@@ -1,6 +1,7 @@
 package hudson.plugins.doxygen;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -185,10 +186,13 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 				|| (build.getResult().equals(Result.UNSTABLE))) {
 
 			listener.getLogger().println("Publishing Doxygen HTML results.");
-
+			
 			try {
+
+				EnvVars environment = build.getEnvironment(listener);
+				
 				DoxygenDirectoryParser parser = new DoxygenDirectoryParser(
-						publishType, doxyfilePath, doxygenHtmlDirectory,folderWhereYouRunDoxygen, listener);
+						publishType, doxyfilePath, doxygenHtmlDirectory,folderWhereYouRunDoxygen, environment, listener);
 				
 				
 				

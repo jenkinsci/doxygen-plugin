@@ -1,25 +1,37 @@
 package hudson.plugins.doxygen;
 
-import hudson.FilePath;
-import hudson.Util;
+import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 
-public abstract class DoxygenVariableSubstitutorTest {
+import org.junit.Test;
 
-    protected File parentFile;
-    protected FilePath workspace;
 
-    public void createWorkspace() throws Exception {
-        parentFile = Util.createTempDir();
-        workspace = new FilePath(parentFile);
-        if (workspace.exists()) {
-            workspace.deleteRecursive();
-        }
-        workspace.mkdirs();
-    }
+public class DoxygenVariableSubstitutorTest {
 
-    public void deleteWorkspace() throws Exception {
-        workspace.deleteRecursive();
-    }
+	@Test
+	public void test() {
+			
+		DoxygenVariableSubstitutor s = new DoxygenVariableSubstitutor();
+			
+		assertEquals(s.substitute("$(SUBS)"), "$SUBS");
+		assertEquals(s.substitute("$ (SUBS)"), "$SUBS");
+		assertEquals(s.substitute("$ ( SUBS)"), "$SUBS");
+		assertEquals(s.substitute("$ ( SUBS )"), "$SUBS");
+		assertEquals(s.substitute("$ (SUBS )"), "$SUBS");
+		assertEquals(s.substitute("$( SUBS )"), "$SUBS");
+		assertEquals(s.substitute("$(SUBS )"), "$SUBS");
+
+		assertEquals(s.substitute("$(a)$(b)$(  c)$  (q)"), "$a$b$c$q");
+		assertEquals(s.substitute(" $(a)$(b)$(  c)$  (q)"), " $a$b$c$q");
+		assertEquals(s.substitute("$(a) $(b)$(  c)$  (q)"), "$a $b$c$q");
+		assertEquals(s.substitute("$(a) $(b) $(  c)$  (q)   "), "$a $b $c$q   ");
+		assertEquals(s.substitute("zzzz$(a)x$(b)y$(  c)zzzz$  (q)"), "zzzz$ax$by$czzzz$q");
+		
+		assertEquals(s.substitute("path$(SUBS)restofpath"), "path$SUBSrestofpath");
+		assertEquals(s.substitute("$(SUBS)"), "$SUBS");
+		assertEquals(s.substitute("path $(SUBS)restofpath"), "path $SUBSrestofpath");
+		assertEquals(s.substitute("path$(SUBS) restofpath"), "path$SUBS restofpath");
+		assertEquals(s.substitute("path $(SUBS) restofpath"), "path $SUBS restofpath");
+	}
+
 }

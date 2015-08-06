@@ -36,6 +36,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     private String doxyfilePath;
     private String folderWhereYouRunDoxygen;
     private TaskListener listener;
+    private DoxygenVariableSubstitutor varSubstitutor;
 
     @Deprecated
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) {
@@ -79,8 +80,10 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         if (generatedHtmlKeyVal == null) {
             return true;
         }
+        
+        String substGeneratedHtmlKeyVal = varSubstitutor.substitute(generatedHtmlKeyVal);
 
-        return DOXYGEN_VALUE_YES.equalsIgnoreCase(generatedHtmlKeyVal);
+        return DOXYGEN_VALUE_YES.equalsIgnoreCase(substGeneratedHtmlKeyVal);
     }
 
     /**
@@ -121,7 +124,10 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         }
         final String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
         if ((outputDirectory != null) && (!outputDirectory.trim().isEmpty())) {
-            result = result.child(outputDirectory);
+        	
+            String substOutputDirectory = varSubstitutor.substitute(outputDirectory);
+        	
+            result = result.child(substOutputDirectory);
         }
 
         //Concat html directory
@@ -130,7 +136,10 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             outputHTML = DOXYGEN_DEFAULT_HTML_OUTPUT;
             listener.getLogger().println( "The " + DOXYGEN_KEY_HTML_OUTPUT + " tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT + " will be used as the default path.");
         }
-        result = result.child(outputHTML);
+        
+        String substOutputHTML = varSubstitutor.substitute(outputHTML);
+       
+        result = result.child(substOutputHTML);
 
         LOGGER.info("Created filepath with the following path:"+result.getRemote());
         if (!result.exists()) {

@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 /**
  * Substitutes Doxygen variables with environment variables.
  * 
- * It replaces variables specified in the doxyfile configuration of the form  "$(var)" with "$var".
- * The latter can then be treated as proper system environment variables and substituted as necessary. 
+ * It replaces variables specified in the doxyfile configuration of the form  "$(VAR)" with the contents
+ * of the VAR system environment variable.
  * 
  * @author mlos
  *
@@ -31,11 +31,14 @@ public class DoxygenVariableSubstitutor {
 		String[] keys = extractKeys(doxyVar);
 		
 		String subst = doxyVar;
-
+		
+		String sysEnv = "";
+		
 		for(int i = 0; i < keys.length; i++) {
 			
-			// Prepend \, otherwise replaceFirst gets confused.
-			subst = subst.replaceFirst(regex.toString(),   "\\" + keys[i]);
+			sysEnv = System.getenv(keys[i]);
+			if(sysEnv != null)
+				subst = subst.replaceFirst(DOXY_VAR_PATTERN.toString(), sysEnv);
 		}
 		
 		return subst;
@@ -51,8 +54,7 @@ public class DoxygenVariableSubstitutor {
 			
 			while(regexMatcher.find()) {
 				
-				// Join the $ and the key name.
-				keys.add(regexMatcher.group(1) + regexMatcher.group(2));
+				keys.add(regexMatcher.group(2));
 			}
 			
 		} catch(Exception e) {

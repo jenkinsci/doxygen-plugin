@@ -22,6 +22,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
     private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
 
+    private static final DoxygenVariableSubstitutor SUBSTITUTOR = new DoxygenVariableSubstitutor();
+
     private transient Map<String, String> doxyfileInfos = new HashMap<String, String>();
 
     private static final String DOXYGEN_KEY_OUTPUT_DIRECTORY = "OUTPUT_DIRECTORY";
@@ -36,7 +38,6 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     private String doxyfilePath;
     private String folderWhereYouRunDoxygen;
     private TaskListener listener;
-    private DoxygenVariableSubstitutor varSubstitutor;
 
     @Deprecated
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) {
@@ -76,14 +77,12 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
         String generatedHtmlKeyVal = doxyfileInfos.get(DOXYGEN_KEY_GENERATE_HTML);
 
-        // If the 'GENERATE_HTML Key is not present, by default the HTML generated documentation is actived.
+        // If the 'GENERATE_HTML Key is not present, by default the HTML generated documentation is activated.
         if (generatedHtmlKeyVal == null) {
             return true;
         }
         
-        String substGeneratedHtmlKeyVal = varSubstitutor.substitute(generatedHtmlKeyVal);
-
-        return DOXYGEN_VALUE_YES.equalsIgnoreCase(substGeneratedHtmlKeyVal);
+        return DOXYGEN_VALUE_YES.equalsIgnoreCase(generatedHtmlKeyVal);
     }
 
     /**
@@ -113,7 +112,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     /**
      * Gets the directory where the Doxygen is generated for the given build.
      */
-    private FilePath getDoxygenGeneratedDir(FilePath base) throws IOException, InterruptedException {
+	private FilePath getDoxygenGeneratedDir(FilePath base) throws IOException, InterruptedException {
 
         if (doxyfileInfos == null)
             return null;
@@ -125,9 +124,11 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         final String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
         if ((outputDirectory != null) && (!outputDirectory.trim().isEmpty())) {
         	
-            String substOutputDirectory = varSubstitutor.substitute(outputDirectory);
+        	String substOutputDirectory = SUBSTITUTOR.substitute(outputDirectory);
         	
-            result = result.child(substOutputDirectory);
+        	if(substOutputDirectory != null) {
+        		result = result.child(substOutputDirectory);
+        	}
         }
 
         //Concat html directory
@@ -137,11 +138,12 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             listener.getLogger().println( "The " + DOXYGEN_KEY_HTML_OUTPUT + " tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT + " will be used as the default path.");
         }
         
-        String substOutputHTML = varSubstitutor.substitute(outputHTML);
+        String substOutputHTML = SUBSTITUTOR.substitute(outputHTML);
        
         result = result.child(substOutputHTML);
 
         LOGGER.info("Created filepath with the following path:"+result.getRemote());
+        
         if (!result.exists()) {
             LOGGER.info("Computed doxygen generated dir does not exist. Returning null");
             return null;
@@ -326,8 +328,11 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             //Retrieve the generated doxygen directory from the build
             doxygenGeneratedDir = getDoxygenGeneratedDir(base);
 
-            if (doxygenGeneratedDir == null || !doxygenGeneratedDir.exists()) {
-                throw new AbortException("The output directory doesn't exist.");
+            if (doxygenGeneratedDir == null) {
+                throw new AbortException("The output directory could not be read from the configuration.");
+            
+            } else if(!doxygenGeneratedDir.exists()) {
+            	throw new AbortException("The output directory '" + doxygenGeneratedDir.readToString() + " 'doesn't exist."); 
             }
         } else {
             //The GENERATE_HTML tag is not set to 'YES'

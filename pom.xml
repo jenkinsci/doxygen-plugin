@@ -7,6 +7,7 @@
         <version>1.447</version>
     </parent>
 
+
     <artifactId>doxygen</artifactId>
     <packaging>hpi</packaging>
     <name>Jenkins Doxygen Plug-in</name>
@@ -74,6 +75,26 @@
             <url>http://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
+
+	<!--- SureFire settings to provide environment variables for DoxygenVariableSubstitutorTest -->
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<environmentVariables>
+						<TEST_DOXY_SUBS>/my/doxygen/path</TEST_DOXY_SUBS>
+						<TEST_DOXY_A>/another/pathA</TEST_DOXY_A>
+						<TEST_DOXY_B>/another/pathB</TEST_DOXY_B>
+						<TEST_DOXY_C>/another/pathC</TEST_DOXY_C>
+						<TEST_DOXY_D>/another/pathD</TEST_DOXY_D>
+					</environmentVariables>
+      			</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 
 </project>  
 

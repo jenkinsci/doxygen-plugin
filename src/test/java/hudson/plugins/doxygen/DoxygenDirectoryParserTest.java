@@ -58,10 +58,10 @@ public class DoxygenDirectoryParserTest extends AbstractWorkspaceTest {
         	
         Logger LOGGER = Logger.getLogger(DoxygenDirectoryParserTest.class.getName());
 
-    	String doxyFileName = "Doxyfile-varsubst";
+    	String doxyFileName = "Doxyfile-env-expand";
     	
-    	String expectedOutputDirectory = "subst-html-out";
-    	String expectedHtmlDirectory = "subst-html";
+    	String expectedOutputDirectory = "exp-html-out";
+    	String expectedHtmlDirectory = "exp-html";
     	
         
     	//Create the doxyfile with content in the temporary workspace
@@ -77,8 +77,8 @@ public class DoxygenDirectoryParserTest extends AbstractWorkspaceTest {
     	EnvVars env = new EnvVars();
     	
     	
-    	env.addLine("SUBST_OUTPUT_DIRECTORY=" + expectedOutputDirectory);
-    	env.addLine("SUBST_HTML_OUTPUT=" + expectedHtmlDirectory);
+    	env.addLine("EXP_OUTPUT_DIRECTORY=" + expectedOutputDirectory);
+    	env.addLine("EXP_HTML_OUTPUT=" + expectedHtmlDirectory);
     	
     	
     	DoxygenDirectoryParser doxygenDirectoryParser =    

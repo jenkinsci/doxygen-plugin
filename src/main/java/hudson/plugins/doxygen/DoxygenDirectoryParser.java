@@ -24,7 +24,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
 
     private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
 
-    private DoxygenVariableSubstitutor substitutor;
+    private DoxygenEnvironmentVariableExpander expander;
 
     private transient Map<String, String> doxyfileInfos = new HashMap<String, String>();
 
@@ -64,7 +64,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         this.folderWhereYouRunDoxygen = folderWhereYouRunDoxygen;
         this.listener = listener;
         
-        substitutor = new DoxygenVariableSubstitutor(environment);
+        expander = new DoxygenEnvironmentVariableExpander(environment);
     }
 
 
@@ -135,9 +135,9 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         final String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
         if ((outputDirectory != null) && (!outputDirectory.trim().isEmpty())) {
  
-       		String substOutputDirectory = substitutor.substitute(outputDirectory);
-    		if(substOutputDirectory != null) {
-    			result = result.child(substOutputDirectory);
+       		String expandedOutputDirectory = expander.expand(outputDirectory);
+    		if(expandedOutputDirectory != null) {
+    			result = result.child(expandedOutputDirectory);
     		}
         }
 
@@ -148,8 +148,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             listener.getLogger().println( "The " + DOXYGEN_KEY_HTML_OUTPUT + " tag is not present or is left blank." + DOXYGEN_DEFAULT_HTML_OUTPUT + " will be used as the default path.");
         }
 
-        String substOutputHTML = substitutor.substitute(outputHTML);
-        result = result.child(substOutputHTML);
+        String expandedOutputHTML = expander.expand(outputHTML);
+        result = result.child(expandedOutputHTML);
 
         LOGGER.info("Created filepath with the following path:"+result.getRemote());
         

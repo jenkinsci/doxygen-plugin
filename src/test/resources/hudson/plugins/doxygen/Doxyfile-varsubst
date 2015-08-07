@@ -95,7 +95,7 @@ FILTER_SOURCE_FILES    = NO
 #---------------------------------------------------------------------------
 # configuration options related to the HTML output
 #---------------------------------------------------------------------------
-GENERATE_HTML          = $(SUBST_GENERATE_HTML)
+GENERATE_HTML          = YES
 HTML_OUTPUT            = $(SUBST_HTML_OUTPUT)
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            = 

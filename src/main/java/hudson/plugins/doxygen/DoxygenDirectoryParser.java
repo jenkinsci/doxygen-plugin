@@ -52,6 +52,11 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     }
 
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, 
+    		EnvVars environment) throws IOException {
+    	this(publishType, doxyfilePath, doxygenHtmlDirectory, folderWhereYouRunDoxygen, environment, TaskListener.NULL);
+    }
+    
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, 
     		EnvVars environment, TaskListener listener) throws IOException {
         this.publishType = publishType;
         this.doxyfilePath = doxyfilePath;

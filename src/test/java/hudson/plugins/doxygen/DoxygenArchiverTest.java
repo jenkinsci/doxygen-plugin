@@ -143,21 +143,7 @@ public class DoxygenArchiverTest extends AbstractWorkspaceTest {
     }
     
     
-    private String readAsString(String resourceName) throws IOException {
-        String contentString = "";
-        BufferedReader reader = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(resourceName)));
-        String line = reader.readLine();
-        while (line != null) {
-        	contentString += line + "\n";
-            line = reader.readLine();
-        }
-        reader.close();
-
-        return contentString;
-    }
-
-    
-    
+     
     @Test
     public void retrieveDoxygenFromLoadFileWithValidInput() throws Exception {
         	

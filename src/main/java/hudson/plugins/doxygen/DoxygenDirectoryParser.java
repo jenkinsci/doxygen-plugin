@@ -42,22 +42,22 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     private TaskListener listener;
 
     @Deprecated
-    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) throws IOException {
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory) {
         this(publishType, doxyfilePath, doxygenHtmlDirectory, null);
     }
 
     @Deprecated
-    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen)  throws IOException {
+    public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen) {
         this(publishType, doxyfilePath, doxygenHtmlDirectory, folderWhereYouRunDoxygen, null, TaskListener.NULL) ;
     }
 
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, 
-    		EnvVars environment) throws IOException {
+    		EnvVars environment)  {
     	this(publishType, doxyfilePath, doxygenHtmlDirectory, folderWhereYouRunDoxygen, environment, TaskListener.NULL);
     }
     
     public DoxygenDirectoryParser(String publishType, String doxyfilePath, String doxygenHtmlDirectory, String folderWhereYouRunDoxygen, 
-    		EnvVars environment, TaskListener listener) throws IOException {
+    		EnvVars environment, TaskListener listener) {
         this.publishType = publishType;
         this.doxyfilePath = doxyfilePath;
         this.doxygenHtmlDirectory = doxygenHtmlDirectory;
@@ -65,16 +65,6 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         this.listener = listener;
         
         substitutor = new DoxygenVariableSubstitutor(environment);
-        
-        if(environment != null) {
-        	LOGGER.info("env-DOXY_OUTPUT_DIRECTORY=" + environment.expand("DOXY_OUTPUT_DIRECTORY"));
-        	LOGGER.info("env-$DOXY_OUTPUT_DIRECTORY=" + environment.expand("$DOXY_OUTPUT_DIRECTORY"));
-        	LOGGER.info("env-JOB_NAME=" + environment.expand("JOB_NAME"));
-        	LOGGER.info("env-$JOB_NAME=" + environment.expand("$JOB_NAME"));
-        } else {
-        	LOGGER.info("NO ENVIRONMENT");
-        }
-
     }
 
 
@@ -145,14 +135,10 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         final String outputDirectory = doxyfileInfos.get(DOXYGEN_KEY_OUTPUT_DIRECTORY);
         if ((outputDirectory != null) && (!outputDirectory.trim().isEmpty())) {
  
-        	LOGGER.info("outputDirectory="  + outputDirectory);
        		String substOutputDirectory = substitutor.substitute(outputDirectory);
-        	LOGGER.info("substOutputDirectory="  + substOutputDirectory);
-        	
     		if(substOutputDirectory != null) {
     			result = result.child(substOutputDirectory);
     		}
-        	
         }
 
         //Concat html directory
@@ -210,8 +196,6 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
             Matcher m = Pattern.compile("((?:[^\"]\\S*)|\"(?:.*?[^\\\\])\")\\s*").matcher(elements[1].trim());
             while (m.find())
             {
-            	LOGGER.info("Grabbed: " + m.group(1));
-            	
                 // Replace delimiting quotes and escaped quotes
                 String s = m.group(1).replace("\\\"", "\"").replaceAll("^\"(.*)\"$", "$1");
                 // Discard continuation character

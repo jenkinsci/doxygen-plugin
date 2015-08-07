@@ -3,6 +3,7 @@ package hudson.plugins.doxygen;
 import hudson.EnvVars;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +24,7 @@ public class DoxygenVariableSubstitutor {
 	// in capturing groups 1 and 2, respectively.
 	private static final Pattern DOXY_VAR_PATTERN = Pattern.compile("(\\$)\\s*\\(\\s*(\\w+)\\s*\\)");
 	
-    private static final Logger LOGGER = Logger.getLogger(DoxygenDirectoryParser.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DoxygenVariableSubstitutor.class.getName());
 
 
 	private EnvVars environment;
@@ -46,13 +47,13 @@ public class DoxygenVariableSubstitutor {
 		for(int i = 0; i < keys.length; i++) {
 			
 			if(environment != null) {
-				
-				
 				val = environment.expand(keys[i]);
-				LOGGER.info("Expanding key: " + keys[i] + " to value:" + val);
 			
-				if(val != null)
+				if(val != null) {
 					subst = subst.replaceFirst(DOXY_VAR_PATTERN.toString(), val);
+				} else {
+					LOGGER.log(Level.WARNING, "The environment variable '" + keys[i] + "' was not set.");
+				}
 			}
 		}
 		
@@ -60,7 +61,7 @@ public class DoxygenVariableSubstitutor {
 	}
 
 	
-	public String[] extractKeys(String input) {
+	private String[] extractKeys(String input) {
 		
 		Matcher regexMatcher = DOXY_VAR_PATTERN.matcher(input);
 		ArrayList<String> keys = new ArrayList<String>();
@@ -79,6 +80,7 @@ public class DoxygenVariableSubstitutor {
 
 		String[] result = new String[keys.size()];
 		
+		// Keep it simple for the caller, use arrays.
 		return keys.toArray(result);
 	}
 		

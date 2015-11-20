@@ -2,6 +2,8 @@ package hudson.plugins.doxygen;
 
 import hudson.EnvVars;
 
+import java.io.*;
+
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +20,7 @@ import java.util.regex.Pattern;
  * @author mlos
  *
  */
-public class DoxygenEnvironmentVariableExpander {
+public class DoxygenEnvironmentVariableExpander implements Serializable {
 
 	// Evaluates "$(varname)" including any white space, putting "$" and "varname"
 	// in capturing groups 1 and 2, respectively.

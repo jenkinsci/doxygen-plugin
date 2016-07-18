@@ -5,12 +5,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.matrix.MatrixAggregatable;
-import hudson.matrix.MatrixAggregator;
-import hudson.matrix.MatrixConfiguration;
-import hudson.matrix.MatrixRun;
-import hudson.matrix.MatrixBuild;
-import hudson.matrix.MatrixProject;
+import hudson.matrix.*;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.ProminentProjectAction;
@@ -48,7 +43,7 @@ import org.kohsuke.stapler.StaplerResponse;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggregatable  {
+public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggregatable {
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = Logger.getLogger(DoxygenArchiver.class.getName());
@@ -358,14 +353,13 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 		}
 	}
 
-	public MatrixAggregator createAggregator(MatrixBuild build,
-			Launcher launcher, BuildListener listener) {
-		
+	@Override
+	public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
 		return new MatrixAggregator(build,launcher,listener) {
-			
-			 public boolean endBuild() throws InterruptedException, IOException {
-				 return DoxygenArchiver.this._perform(build, launcher, listener);
-			 }
+
+			public boolean endBuild() throws InterruptedException, IOException {
+				return DoxygenArchiver.this._perform(build, launcher, listener);
+			}
 		};
 	}
 

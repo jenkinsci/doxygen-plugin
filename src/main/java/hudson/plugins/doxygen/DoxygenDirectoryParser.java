@@ -7,6 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.plugins.doxygen.DoxygenArchiver.DoxygenArchiverDescriptor;
 import hudson.remoting.VirtualChannel;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.*;
 import java.util.*;
@@ -351,4 +352,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         return doxygenGeneratedDir;
     }
 
+    @Override
+    public void checkRoles(RoleChecker roleChecker) throws SecurityException {
+
+    }
 }

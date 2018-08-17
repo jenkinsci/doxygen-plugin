@@ -7,6 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.plugins.doxygen.DoxygenArchiver.DoxygenArchiverDescriptor;
 import hudson.remoting.VirtualChannel;
+import jenkins.MasterToSlaveFileCallable;
 
 import java.io.*;
 import java.util.*;
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, Serializable {
+public class DoxygenDirectoryParser extends MasterToSlaveFileCallable<FilePath> implements Serializable {
 
 
     private static final long serialVersionUID = 1L;

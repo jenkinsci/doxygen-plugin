@@ -19,9 +19,10 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
 import hudson.model.DirectoryBrowserSupport;
-import hudson.model.Hudson;
+import hudson.model.Job;
 import hudson.model.Label;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -36,6 +37,8 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 
+import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.AncestorInPath;
@@ -48,7 +51,7 @@ import org.kohsuke.stapler.StaplerResponse;
  * 
  * @author Gregory Boissinot
  */
-public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggregatable  {
+public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serializable, MatrixAggregatable  {
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = Logger.getLogger(DoxygenArchiver.class.getName());
@@ -116,7 +119,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 		}
 
 		@Override
-		public Publisher newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+		public Publisher newInstance(StaplerRequest req, JSONObject formData) {
 			return req.bindJSON(DoxygenArchiver.class, formData);
 		}
         
@@ -134,7 +137,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 			return true;
 		}
 		
-		public boolean isMatrixProject(AbstractProject<?, ?> project) {
+		public boolean isMatrixProject(Job<?, ?> project) {
 			return project instanceof MatrixProject;
 		}
 				
@@ -167,69 +170,59 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 		return new File(run.getRootDir(), "doxygen/html");
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
-
-		// Check if this project is a matrix project .. then build will be taken from some child and not from here 
-		if (! (build.getProject() instanceof MatrixConfiguration)){
-			return _perform(build,launcher,listener);
+	public void perform(Run<?,?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws AbortException {
+		// Check if this project is a matrix project .. then build will be taken from some child and not from here
+		if (! (run.getParent() instanceof MatrixConfiguration)){
+			_perform(run,workspace,launcher,listener);
 		}
-		return true;
 	}
 
-	
-	private boolean _perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener){
-		
+	private void _perform(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws AbortException {
 		if ((build.getResult().equals(Result.SUCCESS))
 				|| (build.getResult().equals(Result.UNSTABLE))) {
 
 			listener.getLogger().println("Publishing Doxygen HTML results.");
-			
+
 			try {
 
 				EnvVars environment = build.getEnvironment(listener);
-				
+
 				DoxygenDirectoryParser parser = new DoxygenDirectoryParser(
 						publishType, doxyfilePath, doxygenHtmlDirectory,folderWhereYouRunDoxygen, environment, listener);
-				
-				
-				
+
 				// If we are matrix project then we will take from the node as we passed,
-				// otherwise from current build 
+				// otherwise from current build
 				FilePath doxygenGeneratedDir = null;
-				if ((getDescriptor().isMatrixProject(build.getProject())) && (null != runOnChild)){
-					MatrixBuild _thebuild = (MatrixBuild)build;					
-					Label childLabel = Hudson.getInstance().getLabel(runOnChild);
-					
-					// If label is an instance label it is easy to locate the computer .. but if label is 
-					// a group label, we need to find some slave that runs the build and that it is assigned to 
+				if ((getDescriptor().isMatrixProject(build.getParent())) && (null != runOnChild)){
+					MatrixBuild _thebuild = (MatrixBuild)build;
+					Label childLabel = Jenkins.getInstance().getLabel(runOnChild);
+
+					// If label is an instance label it is easy to locate the computer .. but if label is
+					// a group label, we need to find some slave that runs the build and that it is assigned to
 					// that label
 					for (MatrixRun run : _thebuild.getRuns()){
-						// Check if this run runs on the node that is assigned this label 
-						if (run.getBuiltOn().getAssignedLabels().contains(childLabel)){														
+						// Check if this run runs on the node that is assigned this label
+						if (run.getBuiltOn().getAssignedLabels().contains(childLabel)){
 							doxygenGeneratedDir = run.getWorkspace().act(parser);
-                            listener.getLogger().println("Selected node is " + run.getBuiltOn().getDisplayName());
+							listener.getLogger().println("Selected node is " + run.getBuiltOn().getDisplayName());
 							break;
 						}
-					} 	
-					// If we got here and did not assign the directory .. it means that build does not run on this node, or group of nodes 
+					}
+					// If we got here and did not assign the directory .. it means that build does not run on this node, or group of nodes
 					if (null == doxygenGeneratedDir){
-						LOGGER.log(Level.CONFIG,"Project " + build.getProject().getDisplayName() + " is not build on any node that is assigned label " + runOnChild);
+						LOGGER.log(Level.CONFIG,"Project " + build.getParent().getDisplayName() + " is not build on any node that is assigned label " + runOnChild);
 						throw new AbortException("Build does not run on any node with label" + runOnChild);
 					}
 				}else{
-					doxygenGeneratedDir = build.getWorkspace().act(parser);
+					doxygenGeneratedDir = workspace.act(parser);
 				}
 
-
-				listener.getLogger().println(
-						"The determined Doxygen directory is '" + doxygenGeneratedDir + "'.");
+				listener.getLogger().println("The determined Doxygen directory is '" + doxygenGeneratedDir + "'.");
 
 				// Determine the future stored doxygen directory
 				FilePath target = new FilePath(keepAll ? getDoxygenDir(build)
-						: getDoxygenDir(build.getProject()));
+						: getDoxygenDir(build.getParent()));
 
 				if (doxygenGeneratedDir.copyRecursiveTo("**/*", target) == 0) {
 					if (build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
@@ -239,13 +232,10 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 						// it produces javadoc.
 					}
 
-					listener.getLogger().println(
+					throw new AbortException(
 							"Failure to copy the generated doxygen html documentation at '"
 									+ doxygenHtmlDirectory + "' to '" + target
 									+ "'");
-
-					build.setResult(Result.FAILURE);
-					return true;
 				}
 
 				// add build action, if doxygen is recorded for each build
@@ -253,9 +243,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 					build.addAction(new DoxygenBuildAction(build));
 
 			} catch (Exception e) {
-				e.printStackTrace(listener.fatalError("error"));
-				build.setResult(Result.FAILURE);
-				return true;
+				throw new AbortException("Error in Doxygen processing: " + e.getMessage());
 			}
 
 			listener.getLogger().println("End publishing Doxygen HTML results.");
@@ -263,11 +251,8 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 		else{
 			listener.getLogger().println("Build failed. Publishing Doxygen skipped.");
 		}
-		return true;
 	}
-	
-	
-	
+
 	public BuildStepMonitor getRequiredMonitorService() {
 		return BuildStepMonitor.STEP;
 	}
@@ -299,13 +284,10 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 				return null;
 		}
 
-
         public void doDynamic(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
             DirectoryBrowserSupport dbs = new DirectoryBrowserSupport(this, new FilePath(this.dir()), this.getTitle(), "graph.gif", false);
             dbs.generateResponse(req, rsp, this);
         }
-        
-
 
 		protected abstract String getTitle();
 
@@ -343,18 +325,18 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 	}
 
 	public static class DoxygenBuildAction extends BaseDoxygenAction {
-		private final AbstractBuild<?, ?> build;
+		private final Run<?, ?> run;
 
-		public DoxygenBuildAction(AbstractBuild<?, ?> build) {
-			this.build = build;
+		public DoxygenBuildAction(Run<?, ?> build) {
+			this.run = build;
 		}
 
 		protected String getTitle() {
-			return build.getDisplayName() + " doxygen/html";
+			return run.getDisplayName() + " doxygen/html";
 		}
 
 		protected File dir() {
-			return new File(build.getRootDir(), "doxygen/html");
+			return new File(run.getRootDir(), "doxygen/html");
 		}
 	}
 
@@ -363,8 +345,13 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 		
 		return new MatrixAggregator(build,launcher,listener) {
 			
-			 public boolean endBuild() throws InterruptedException, IOException {
-				 return DoxygenArchiver.this._perform(build, launcher, listener);
+			 public boolean endBuild() {
+			 	try {
+					DoxygenArchiver.this._perform(build, build.getWorkspace(), launcher, listener);
+				} catch(AbortException e) {
+			 		return false;
+				}
+				return true;
 			 }
 		};
 	}

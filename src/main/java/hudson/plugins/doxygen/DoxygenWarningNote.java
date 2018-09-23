@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public class DoxygenWarningNote  extends ConsoleNote {
     /** Pattern to identify doxygen warning message */
-    public static Pattern PATTERN = Pattern.compile("^[Ww]arning:\\s.*");
+    public static Pattern PATTERN = Pattern.compile("^.*[Ww]arning:\\s.*");
     
     public DoxygenWarningNote() {
     }

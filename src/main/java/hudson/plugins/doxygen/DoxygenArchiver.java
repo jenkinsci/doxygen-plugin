@@ -12,6 +12,7 @@ import hudson.matrix.MatrixRun;
 import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
 import hudson.model.Action;
+import hudson.model.InvisibleAction;
 import hudson.model.BuildListener;
 import hudson.model.ProminentProjectAction;
 import hudson.model.Result;
@@ -34,6 +35,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
 
 import javax.servlet.ServletException;
 
@@ -43,9 +46,12 @@ import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+
+import org.jenkinsci.Symbol;
 
 /**
  * 
@@ -75,9 +81,9 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 	private transient String publishType;
 	
 	
-	public String runOnChild;
+	public String runOnChild = null;
 	
-	public String folderWhereYouRunDoxygen;
+	public final String folderWhereYouRunDoxygen;
 
 	/**
 	 * The doxygen html directory
@@ -102,6 +108,7 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 		return doxygenHtmlDirectory;
 	}
 
+	@Symbol("publishDoxygen")
 	public static final class DoxygenArchiverDescriptor extends
 			BuildStepDescriptor<Publisher> {
 
@@ -124,6 +131,10 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 		}
         
         public FormValidation doCheckDoxyfilePath(@AncestorInPath AbstractProject project, @QueryParameter String value) throws IOException {
+            // If in the snippet generator, don't do any validation
+            if (project == null) {
+                return FormValidation.ok();
+            }
             FilePath ws = project.getSomeWorkspace();
             return ws!=null ? ws.validateFileMask(value, true) : FormValidation.ok();
         }
@@ -144,11 +155,15 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 	}
 
 	@DataBoundConstructor
-	public DoxygenArchiver(String doxyfilePath, boolean keepAll,String runOnChild,String folderWhereYouRunDoxygen) {
+	public DoxygenArchiver(String doxyfilePath, boolean keepAll, String folderWhereYouRunDoxygen) {
 		this.doxyfilePath = doxyfilePath.trim();
 		this.keepAll = keepAll;
-		this.runOnChild = (null != runOnChild)?runOnChild.trim():null;
 		this.folderWhereYouRunDoxygen = folderWhereYouRunDoxygen;
+	}
+
+	@DataBoundSetter
+	public void setRunOnChild(String runOnChild) {
+		this.runOnChild = (null != runOnChild) ? runOnChild.trim() : null;
 	}
 
 	@Override
@@ -179,8 +194,11 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 	}
 
 	private void _perform(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws AbortException {
-		if ((build.getResult().equals(Result.SUCCESS))
-				|| (build.getResult().equals(Result.UNSTABLE))) {
+		// In a pipeline, the result is typically not initialsed but this should not prevent the publisher from running
+		Result result = build.getResult();
+		if (result == null ||
+			result.equals(Result.SUCCESS) ||
+			result.equals(Result.UNSTABLE)) {
 
 			listener.getLogger().println("Publishing Doxygen HTML results.");
 
@@ -225,22 +243,19 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 						: getDoxygenDir(build.getParent()));
 
 				if (doxygenGeneratedDir.copyRecursiveTo("**/*", target) == 0) {
-					if (build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
-						// If the build failed, don't complain that there was no
-						// javadoc.
-						// The build probably didn't even get to the point where
-						// it produces javadoc.
-					}
-
 					throw new AbortException(
 							"Failure to copy the generated doxygen html documentation at '"
 									+ doxygenHtmlDirectory + "' to '" + target
 									+ "'");
 				}
 
-				// add build action, if doxygen is recorded for each build
+				// Add a normal build action if doxygen is recorded for each build,
+				// otherwise add an 'Invisible' build action so that the project action
+				// can still be added
 				if (keepAll)
 					build.addAction(new DoxygenBuildAction(build));
+				else
+					build.addAction(new InvisibleDoxygenBuildAction(build));
 
 			} catch (Exception e) {
 				throw new AbortException("Error in Doxygen processing: " + e.getMessage());
@@ -260,11 +275,6 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 	@Override
 	public DoxygenArchiverDescriptor getDescriptor() {
 		return DESCRIPTOR;
-	}
-
-	@Override
-	public Action getProjectAction(AbstractProject<?, ?> project) {
-		return new DoxygenAction(project);
 	}
 
 	protected static abstract class BaseDoxygenAction implements Action {
@@ -290,41 +300,33 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
         }
 
 		protected abstract String getTitle();
-
 		protected abstract File dir();
 	}
 
-	public static class DoxygenAction extends BaseDoxygenAction implements
-			ProminentProjectAction {
-		private final AbstractItem project;
+	public static class DoxygenAction extends BaseDoxygenAction implements ProminentProjectAction {
+		private final Job job;
 
-		public DoxygenAction(AbstractItem project) {
-			this.project = project;
+		public DoxygenAction(Job job) {
+			this.job = job;
 		}
 
 		protected File dir() {
-
-			if (project instanceof AbstractProject) {
-				AbstractProject abstractProject = (AbstractProject) project;
-
-				Run run = abstractProject.getLastSuccessfulBuild();
-				if (run != null) {
-					File doxygenDir = getDoxygenDir(run);
-
-					if (doxygenDir.exists())
-						return doxygenDir;
-				}
+			Run run = job.getLastSuccessfulBuild();
+			if (run != null) {
+				File doxygenDir = getDoxygenDir(run);
+				if (doxygenDir.exists())
+					return doxygenDir;
 			}
 
-			return getDoxygenDir(project);
+			return getDoxygenDir(job);
 		}
 
 		protected String getTitle() {
-			return project.getDisplayName() + " doxygen";
+			return job.getDisplayName() + " doxygen";
 		}
 	}
 
-	public static class DoxygenBuildAction extends BaseDoxygenAction {
+	public static class DoxygenBuildAction extends BaseDoxygenAction implements SimpleBuildStep.LastBuildAction {
 		private final Run<?, ?> run;
 
 		public DoxygenBuildAction(Run<?, ?> build) {
@@ -337,6 +339,24 @@ public class DoxygenArchiver extends Recorder implements SimpleBuildStep, Serial
 
 		protected File dir() {
 			return new File(run.getRootDir(), "doxygen/html");
+		}
+
+		@Override
+		public Collection<? extends Action> getProjectActions() {
+			return Collections.singleton(new DoxygenAction(run.getParent()));
+		}
+	}
+
+	public static class InvisibleDoxygenBuildAction extends InvisibleAction implements SimpleBuildStep.LastBuildAction {
+		private final Run<?, ?> run;
+
+		public InvisibleDoxygenBuildAction(Run<?, ?> build) {
+			this.run = build;
+		}
+
+		@Override
+		public Collection<? extends Action> getProjectActions() {
+			return Collections.singleton(new DoxygenAction(run.getParent()));
 		}
 	}
 

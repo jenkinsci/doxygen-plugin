@@ -10,6 +10,9 @@ import hudson.slaves.NodeSpecific;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import java.io.IOException;
+
+import jenkins.model.Jenkins;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -32,7 +35,7 @@ public final class DoxygenInstallation extends ToolInstallation implements NodeS
     } 
     
     
-    @Extension
+    @Extension @Symbol("doxygen")
     public static class DescriptorImpl extends ToolDescriptor<DoxygenInstallation> {
 
         public String getDisplayName() {
@@ -41,12 +44,12 @@ public final class DoxygenInstallation extends ToolInstallation implements NodeS
 
         @Override
         public DoxygenInstallation[] getInstallations() {
-            return Hudson.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).getInstallations();
+            return Jenkins.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).getInstallations();
         }
 
         @Override
         public void setInstallations(DoxygenInstallation... installations) {
-            Hudson.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).setInstallations(installations);
+            Jenkins.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).setInstallations(installations);
         }
 
     }

@@ -45,16 +45,16 @@ public class DoxygenEnvironmentVariableExpander implements Serializable {
 		String expandedVar = doxyVar;
 		
 		String val = "";
-		
-		for(int i = 0; i < keys.length; i++) {
-			
-			if(environment != null) {
-				val = environment.expand(keys[i]);
-			
-				if(val != null) {
+
+		for (String key : keys) {
+
+			if (environment != null) {
+				val = environment.expand(key);
+
+				if (val != null) {
 					expandedVar = expandedVar.replaceFirst(DOXY_VAR_PATTERN.toString(), val);
 				} else {
-					LOGGER.log(Level.WARNING, "The environment variable '" + keys[i] + "' was not set.");
+					LOGGER.log(Level.WARNING, "The environment variable '" + key + "' was not set.");
 				}
 			}
 		}

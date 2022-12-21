@@ -3,13 +3,14 @@ package hudson.plugins.doxygen;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.EnvironmentSpecific;
-import hudson.model.Hudson;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.NodeSpecific;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import java.io.IOException;
+
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -41,12 +42,12 @@ public final class DoxygenInstallation extends ToolInstallation implements NodeS
 
         @Override
         public DoxygenInstallation[] getInstallations() {
-            return Hudson.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).getInstallations();
+            return Jenkins.get().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).getInstallations();
         }
 
         @Override
         public void setInstallations(DoxygenInstallation... installations) {
-            Hudson.getInstance().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).setInstallations(installations);
+            Jenkins.get().getDescriptorByType(DoxygenBuilder.DescriptorImpl.class).setInstallations(installations);
         }
 
     }

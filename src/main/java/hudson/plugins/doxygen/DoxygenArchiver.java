@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.AncestorInPath;
@@ -201,7 +202,7 @@ public class DoxygenArchiver extends Recorder implements Serializable,MatrixAggr
 				FilePath doxygenGeneratedDir = null;
 				if ((getDescriptor().isMatrixProject(build.getProject())) && (null != runOnChild)){
 					MatrixBuild _thebuild = (MatrixBuild)build;					
-					Label childLabel = Hudson.getInstance().getLabel(runOnChild);
+					Label childLabel = Jenkins.get().getLabel(runOnChild);
 					
 					// If label is an instance label it is easy to locate the computer .. but if label is 
 					// a group label, we need to find some slave that runs the build and that it is assigned to 

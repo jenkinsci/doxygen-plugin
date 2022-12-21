@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public class DoxygenErrorNote  extends ConsoleNote {
     /** Pattern to identify doxygen error message */
-    public static Pattern PATTERN = Pattern.compile("^[Ee]rror[:\\s].*");
+    public static final Pattern PATTERN = Pattern.compile("^[Ee]rror[:\\s].*");
     
     public DoxygenErrorNote() {
     }

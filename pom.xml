@@ -4,20 +4,21 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.447</version>
+        <version>4.53</version>
+        <relativePath />
     </parent>
-
 
     <artifactId>doxygen</artifactId>
     <packaging>hpi</packaging>
-    <name>Jenkins Doxygen Plug-in</name>
-    <version>0.19-SNAPSHOT</version>
+    <name>Jenkins Doxygen</name>
+    <version>${changelist}</version>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Doxygen+Plugin</url>
 
     <properties>
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <changelist>999999-SNAPSHOT</changelist>
+        <jenkins.version>2.361.4</jenkins.version>
+        <!-- TODO fix violations -->
+        <spotbugs.threshold>High</spotbugs.threshold>
     </properties>
 
     <licenses>
@@ -36,12 +37,28 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/jenkinsci/doxygen-plugin.git</connection>
+        <connection>scm:git:https://github.com/jenkinsci/doxygen-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/doxygen-plugin.git</developerConnection>
-      <tag>HEAD</tag>
+        <tag>${scmTag}</tag>
   </scm>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>1750.v0071fa_4c4a_e3</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>matrix-project</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.jmock</groupId>
             <artifactId>jmock-junit4</artifactId>
@@ -57,7 +74,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -65,17 +81,16 @@
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
+            <url>https://repo.jenkins-ci.org/public/</url>
         </repository>
     </repositories>
 
     <pluginRepositories>
         <pluginRepository>
             <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
+            <url>https://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
-
 
 </project>  
 

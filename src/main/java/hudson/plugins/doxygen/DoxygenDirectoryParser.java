@@ -1,5 +1,6 @@
 package hudson.plugins.doxygen;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -7,6 +8,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.plugins.doxygen.DoxygenArchiver.DoxygenArchiverDescriptor;
 import hudson.remoting.VirtualChannel;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.*;
 import java.util.*;
@@ -164,6 +166,7 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
     /**
      * Load the Doxyfile Doxygen file in memory
      */
+    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "Todo triage")
     private void loadDoxyFile(FilePath doxyfilePath)
             throws IOException, InterruptedException {
 
@@ -351,4 +354,8 @@ public class DoxygenDirectoryParser implements FilePath.FileCallable<FilePath>, 
         return doxygenGeneratedDir;
     }
 
+    @Override
+    public void checkRoles(RoleChecker checker) throws SecurityException {
+
+    }
 }

@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <f:entry title="${%Doxygen installation}">
         <select class="setting-input" name="doxygenBuilder.installationName">
